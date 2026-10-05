@@ -6,32 +6,32 @@ import { BasePage } from './base.page';
  * that read like the user story) stays the same.
  */
 export class LoginPage extends BasePage {
-  private readonly path = '/login';
+	private readonly path = '/login';
 
-  get username() {
-    return this.page.locator('#username');
-  }
+	get username() {
+		return this.page.locator('#username');
+	}
 
-  get password() {
-    return this.page.locator('#password');
-  }
+	get password() {
+		return this.page.locator('#password');
+	}
 
-  get submit() {
-    return this.page.locator('button[type="submit"]');
-  }
+	get submit() {
+		return this.page.locator('button[type="submit"]');
+	}
 
-  get flash() {
-    return this.page.locator('#flash');
-  }
+	get flash() {
+		return this.page.locator('#flash');
+	}
 
-  async open(): Promise<void> {
-    await this.goto(this.path);
-  }
+	async open(): Promise<void> {
+		await this.goto(this.path);
+	}
 
-  async login(username: string, password: string): Promise<void> {
-    await this.open();
-    await this.username.fill(username);
-    await this.password.fill(password);
-    await this.submit.click();
-  }
+	async login(username: string, password: string): Promise<void> {
+		await this.open();
+		await this.username.fill(username);
+		await this.password.fill(password);
+		await this.submit.click();
+	}
 }

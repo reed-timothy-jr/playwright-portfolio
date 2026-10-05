@@ -1,0 +1,7 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"formatter": { "enabled": true },
+	"javascript": { "formatter": { "quoteStyle": "single" } },
+	"linter": { "enabled": true, "rules": { "preset": "recommended" } },
+	"vcs": { "clientKind": "git", "enabled": true, "useIgnoreFile": true }
+}

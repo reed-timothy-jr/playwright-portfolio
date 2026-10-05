@@ -3,17 +3,17 @@ import { config } from '../framework/config';
 
 /** Base page: every page object gets navigation + the framework config. */
 export abstract class BasePage {
-  constructor(protected readonly page: Page) {}
+	constructor(protected readonly page: Page) {}
 
-  protected get baseURL(): string {
-    return config.baseURL;
-  }
+	protected get baseURL(): string {
+		return config.baseURL;
+	}
 
-  async goto(path: string): Promise<void> {
-    await this.page.goto(path);
-  }
+	async goto(path: string): Promise<void> {
+		await this.page.goto(path);
+	}
 
-  async title(): Promise<string> {
-    return this.page.title();
-  }
+	async title(): Promise<string> {
+		return this.page.title();
+	}
 }

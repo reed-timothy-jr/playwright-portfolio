@@ -51,6 +51,19 @@ tests/
   resilience/     # self-healing + chaos engineering demos
 ```
 
+## Why these tests
+
+Each suite exists for a risk reason, not a coverage number:
+
+- **smoke/login** — authentication is the gateway to every other flow. If login breaks, nothing downstream is testable, so it runs on every PR.
+- **api/users** — contract checks: typed responses (Zod-validated), resource creation, and 404 behavior. APIs are where integration bugs hide.
+- **resilience/self-healing** — locator rot is the #1 killer of UI suites. This suite proves the framework recovers from a stale selector *and* logs the healing as evidence.
+- **resilience/chaos** — happy-path green means little if the app collapses under latency or 5xx responses. Fault injection verifies recovery behavior.
+
+## What I'd improve next
+
+See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priority order: DB validation layer, flaky-test quarantine, visual baselines, Axe accessibility, API auth flows, test-data factories, Gherkin layer, Allure, performance budgets, AI failure-analysis agent.
+
 ## Design principles
 
 1. **The primary locator is the contract.** Healing recovers the run; it never silently rewrites the suite — healed locators need human approval to be committed.
