@@ -91,4 +91,33 @@ export class ChaosInjector {
 	get faultedCount(): number {
 		return this.records.filter((r) => r.action !== 'passed').length;
 	}
+
+	// ------------------------------------------------------------------
+	// Runtime faults (page-lifecycle layer): faults the browser can reach
+	// beyond the network — offline mode, CPU throttling, storage wipes.
+	// Combine with network faults for full-spectrum chaos.
+	// ------------------------------------------------------------------
+
+	/** Simulate the device going offline. Requests fail; the app must cope. */
+	async goOffline(): Promise<void> {
+		await this.page.context().setOffline(true);
+	}
+
+	async goOnline(): Promise<void> {
+		await this.page.context().setOffline(false);
+	}
+
+	/** Throttle the CPU (4x slowdown) to surface race conditions and jank. */
+	async throttleCPU(rate = 4): Promise<void> {
+		const session = await this.page.context().newCDPSession(this.page);
+		await session.send('Emulation.setCPUThrottlingRate', { rate });
+	}
+
+	/** Wipe localStorage + sessionStorage mid-flow — SPAs must recover. */
+	async wipeStorage(): Promise<void> {
+		await this.page.evaluate(() => {
+			window.localStorage.clear();
+			window.sessionStorage.clear();
+		});
+	}
 }

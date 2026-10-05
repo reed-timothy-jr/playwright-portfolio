@@ -62,8 +62,31 @@ export default defineConfig({
 		proxy: proxyFromEnv(),
 	},
 	projects: [
-		{ name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-		{ name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-		{ name: 'webkit', use: { ...devices['Desktop Safari'] } },
+		// Auth setup: logs in once, saves storage state for the auth project.
+		{ name: 'setup', testMatch: /.*\.setup\.ts/ },
+		{
+			name: 'chromium',
+			use: { ...devices['Desktop Chrome'] },
+			testIgnore: /.*\.auth\.spec\.ts/,
+		},
+		{
+			name: 'firefox',
+			use: { ...devices['Desktop Firefox'] },
+			testIgnore: /.*\.auth\.spec\.ts/,
+		},
+		{
+			name: 'webkit',
+			use: { ...devices['Desktop Safari'] },
+			testIgnore: /.*\.auth\.spec\.ts/,
+		},
+		{
+			name: 'chromium-auth',
+			use: {
+				...devices['Desktop Chrome'],
+				storageState: 'playwright/.auth/user.json',
+			},
+			dependencies: ['setup'],
+			testMatch: /.*\.auth\.spec\.ts/,
+		},
 	],
 });

@@ -14,8 +14,13 @@ A senior-grade Playwright + TypeScript starter framework: self-healing locators,
 | Area | What you get |
 |---|---|
 | **Self-healing locators** | `src/framework/selfHealing.ts` — primary locator + ordered fallback strategies (role, text, CSS). Every healing event is logged with before/after strategy. Optional AI provider hook (any LLM) as a last resort — deterministic strategies always run first. |
-| **Chaos engineering** | `src/framework/chaos.ts` — bounded fault injection: latency, error-rate aborts, intercepted-request logging, start/stop controls. |
-| **API testing** | `src/framework/apiClient.ts` — typed, dependency-free client (GET/POST/PUT/PATCH/DELETE) with status + body + header assertions. |
+| **Chaos engineering** | `src/framework/chaos.ts` — network faults (latency, error-rate aborts, interception log) plus runtime faults (offline mode, CPU throttling, storage wipes). |
+| **API testing** | `src/framework/apiClient.ts` — typed, dependency-free client (GET/POST/PUT/PATCH/DELETE) with Zod contract validation. |
+| **Database layer** | `src/framework/db.ts` — one interface, two implementations: real Postgres (`pg`, env-configured) and in-process Postgres (PGlite) for hermetic specs. |
+| **Auth sessions** | `tests/auth.setup.ts` — logs in once, saves storage state; the `chromium-auth` project reuses it. No repeated logins. |
+| **Accessibility** | axe-core suite scoped to critical/serious WCAG 2.0A/2.1AA violations. |
+| **Visual regression** | Deterministic fixture baselines — stable across machines and CI. |
+| **Performance budgets** | Navigation Timing API assertions with env-configurable budgets, timing attached as evidence. |
 | **Evidence** | `src/framework/evidence.ts` — screenshots, DOM snapshots, and structured JSON attached to every report. Failures ship with proof. |
 | **Page objects** | `src/pages/` — named locators, action methods that read like the user story. |
 | **Fixtures** | `src/fixtures.ts` — `api` + `chaos` fixtures on every test, auto-cleaned. |
@@ -42,13 +47,22 @@ The example suites run against stable public targets (`the-internet.herokuapp.co
 
 ```
 src/
-  framework/      # the reusable core: self-healing, chaos, API client, evidence, config
+  framework/      # the reusable core: self-healing, chaos, API client, DB layer, evidence, config
   pages/          # page objects (your app goes here)
-  fixtures.ts     # test.extend wiring
+  fixtures.ts     # test.extend wiring (api, chaos)
 tests/
-  smoke/          # critical path, runs on every PR
-  api/            # contract-level API checks
+  auth.setup.ts   # logs in once, saves storage state for the auth project
+  smoke/          # critical path, runs on every PR (incl. authenticated specs)
+  api/            # contract-level API checks (Zod-validated)
+  db/             # database layer specs (in-process Postgres, no infra needed)
+  a11y/           # axe-core accessibility checks
+  visual/         # visual regression (deterministic fixture baselines)
+  perf/           # performance budgets via Navigation Timing API
   resilience/     # self-healing + chaos engineering demos
+docs/
+  adr-001-why-playwright.md
+  locator-strategy.md
+  whats-next.md   # honest gap list, in priority order
 ```
 
 ## Why these tests
@@ -59,6 +73,10 @@ Each suite exists for a risk reason, not a coverage number:
 - **api/users** — contract checks: typed responses (Zod-validated), resource creation, and 404 behavior. APIs are where integration bugs hide.
 - **resilience/self-healing** — locator rot is the #1 killer of UI suites. This suite proves the framework recovers from a stale selector *and* logs the healing as evidence.
 - **resilience/chaos** — happy-path green means little if the app collapses under latency or 5xx responses. Fault injection verifies recovery behavior.
+- **db/users** — proves the persistence contract: seeded data is queryable by the login flow, unknowns stay unknown, uniqueness is enforced. Runs on in-process Postgres — no Docker needed.
+- **a11y/login** — axe-core on the login page, failing only on critical/serious impacts.
+- **visual/login** — deterministic fixture baseline; catches unintended UI drift.
+- **perf/login** — page load and time-to-first-byte against env-configurable budgets.
 
 ## What I'd improve next
 
@@ -73,10 +91,14 @@ See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priorit
 
 ## Roadmap
 
-- [ ] DB validation layer (Postgres/MySQL adapters, UI→API→DB consistency checks)
+- [x] DB validation layer (Postgres + in-process PGlite)
 - [ ] Gherkin/BDD authoring layer over the same execution core
-- [ ] Visual regression module
-- [ ] Performance budgets (Lighthouse-style)
+- [ ] Flaky-test quarantine (detect retry-passes, quarantine with owner + deadline)
+- [ ] Visual baselines for real app pages (per-environment generation)
+- [ ] Axe-core on all critical flows (currently login only)
+- [ ] API auth flows (token fixtures, per-suite auth state)
+- [ ] Test-data factories (seeded, isolated, deterministic cleanup)
+- [ ] Allure reporting alongside HTML
 - [ ] AI failure-analysis agent (see [PowerBase AI PRD](https://github.com/reedtimothyjr-ai/PowerBasePlaywright))
 
 ## Author
