@@ -4,7 +4,7 @@
 
 A senior-grade Playwright + TypeScript starter framework: self-healing locators, chaos-engineering fault injection, typed API client, evidence-rich reporting, Docker one-liner, and CI out of the box. Built as a portfolio showpiece — and as a drop-in starter kit for any new engagement.
 
-[![CI](https://github.com/reedtimothyjr-ai/powerbase-playwright-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/reedtimothyjr-ai/powerbase-playwright-framework/actions/workflows/ci.yml)
+[![CI](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml)
 ![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -99,7 +99,7 @@ See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priorit
 - [ ] API auth flows (token fixtures, per-suite auth state)
 - [ ] Test-data factories (seeded, isolated, deterministic cleanup)
 - [ ] Allure reporting alongside HTML
-- [ ] AI failure-analysis agent (see [PowerBase AI PRD](https://github.com/reedtimothyjr-ai/PowerBasePlaywright))
+- [ ] AI failure-analysis agent (see [PowerBase AI PRD](https://github.com/Reed-Timothy-jr/PowerBasePlaywright))
 
 ## Author
 
