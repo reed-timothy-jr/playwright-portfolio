@@ -30,6 +30,31 @@ export interface PostgresOptions {
 	ssl?: boolean;
 }
 
+/**
+ * Two lanes, one interface:
+ * - PGlite lane (default): in-process Postgres, no server or Docker.
+ *   Fast, hermetic, green on clone — the right default for CI.
+ * - Real-Postgres lane: set DB_HOST (+ DB_USER, DB_PASSWORD, DB_NAME,
+ *   optional DB_PORT / DB_SSL=true) to run the same specs against a real
+ *   database. Use it for integration runs against your own backend.
+ */
+export function createDatabaseClient(): DatabaseClient {
+	if (process.env.DB_HOST) {
+		return PostgresDatabase.fromEnv();
+	}
+	return new PGliteDatabase();
+}
+
+/**
+ * Collision-safe name for per-test database objects (tables, schemas).
+ * Parallel workers must never share mutable state — scope every object
+ * a test creates to a unique name and drop it in cleanup.
+ */
+export function scopedName(prefix: string): string {
+	const rand = Math.random().toString(36).slice(2, 8);
+	return `${prefix}_${process.pid}_${Date.now().toString(36)}_${rand}`;
+}
+
 /** Real Postgres, connection-pooled, env-driven. */
 export class PostgresDatabase implements DatabaseClient {
 	private pool: Pool;
