@@ -46,6 +46,7 @@ export const test = base.extend<PowerBaseFixtures, PowerBaseWorkerFixtures>({
 		await injector.stop();
 	},
 	appTarget: [
+		// biome-ignore lint/correctness/noEmptyPattern: Playwright fixture signature
 		async ({}, use) => {
 			if (process.env.BASE_URL) {
 				// Explicit external target — the team owns its availability.

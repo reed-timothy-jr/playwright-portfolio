@@ -17,7 +17,10 @@ interface NavTiming {
 }
 
 test.describe('performance budgets', () => {
-	test('login page loads within budget', async ({ page, appTarget }, testInfo) => {
+	test('login page loads within budget', async ({
+		page,
+		appTarget,
+	}, testInfo) => {
 		await page.goto(`${appTarget.url}/login`);
 
 		const timing = await page.evaluate((): NavTiming => {

@@ -11,18 +11,11 @@ test.describe('self-healing unit', () => {
 	test('tries fallbacks in order and heals with the first working one', async ({
 		page,
 	}) => {
-		await page.setContent(
-			'<button type="submit">Login</button>',
-		);
-		const h = heal(
-			page,
-			'login button',
-			(p) => p.locator('#stale-primary'),
-			[
-				{ name: 'also-stale', locate: (p) => p.locator('.missing-too') },
-				{ name: 'css-submit', locate: (p) => p.locator('button[type="submit"]') },
-			],
-		);
+		await page.setContent('<button type="submit">Login</button>');
+		const h = heal(page, 'login button', (p) => p.locator('#stale-primary'), [
+			{ name: 'also-stale', locate: (p) => p.locator('.missing-too') },
+			{ name: 'css-submit', locate: (p) => p.locator('button[type="submit"]') },
+		]);
 		const locator = await h.resolve(2000);
 		expect(await locator.count()).toBe(1);
 
@@ -32,23 +25,16 @@ test.describe('self-healing unit', () => {
 			'also-stale',
 			'css-submit',
 		]);
-		expect(log.map((a) => a.outcome)).toEqual([
-			'failed',
-			'failed',
-			'healed',
-		]);
+		expect(log.map((a) => a.outcome)).toEqual(['failed', 'failed', 'healed']);
 		expect(h.getHealingEvents()).toHaveLength(1);
 		expect(h.getHealingEvents()[0].healedBy).toBe('css-submit');
 	});
 
 	test('ambiguous fallbacks are rejected, never healed', async ({ page }) => {
 		await page.setContent('<button>Login</button><button>Login</button>');
-		const h = heal(
-			page,
-			'login button',
-			(p) => p.locator('#stale-primary'),
-			[{ name: 'text-login', locate: (p) => p.getByText('Login') }],
-		);
+		const h = heal(page, 'login button', (p) => p.locator('#stale-primary'), [
+			{ name: 'text-login', locate: (p) => p.getByText('Login') },
+		]);
 		await expect(h.resolve(2000)).rejects.toThrow(/strategies failed/);
 
 		const log = h.getAttemptLog();

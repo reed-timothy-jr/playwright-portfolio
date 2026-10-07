@@ -12,10 +12,14 @@ How this framework finds elements — and what happens when it can't.
 
 ## Self-healing
 
-`src/framework/selfHealing.ts` encodes this priority as an ordered fallback chain.
+`src/support/selfHealing.ts` encodes this priority as an ordered fallback chain.
 The primary locator is the contract; when it breaks, fallbacks recover the run
-and every healing event is logged (target, failed error, healed-by strategy).
+only on unambiguous matches (exactly one element) — ambiguous matches are
+rejected and logged, never silently healed. Every healing event is logged
+(target, failed error, healed-by strategy), and the full attempt log
+(`getAttemptLog()`) distinguishes a recovered test from a clean pass.
 Healed locators are **proposed fixes, not silent commits** — promoting one to
-primary requires a human-approved code change.
+primary requires a human-approved code change. In `strict` mode, an ambiguous
+primary fails fast instead of healing.
 
-See `tests/resilience/self-healing.spec.ts` for the executable specification.
+See `tests/proof/self-healing.spec.ts` for the executable specification.

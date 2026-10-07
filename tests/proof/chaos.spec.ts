@@ -1,6 +1,6 @@
 import { expect, test } from '../../src/fixtures';
-import { attachJson } from '../../src/support/evidence';
 import { LoginPage } from '../../src/pages/login.page';
+import { attachJson } from '../../src/support/evidence';
 
 /**
  * PROOF suite — executable evidence that bounded fault injection works.

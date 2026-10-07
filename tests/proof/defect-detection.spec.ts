@@ -2,9 +2,9 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { z } from 'zod';
 import { expect, test } from '../../src/fixtures';
-import { attachJson } from '../../src/support/evidence';
 import { ApiClient } from '../../src/support/apiClient';
 import type { PGliteDatabase } from '../../src/support/db';
+import { attachJson } from '../../src/support/evidence';
 import { heal } from '../../src/support/selfHealing';
 
 /**
@@ -27,9 +27,7 @@ test.describe('defect detection proof', () => {
 		// Defect: a deploy duplicated the submit button — two identical
 		// "Delete" buttons now exist. Healing to either one could delete
 		// the wrong record and still pass. The framework must refuse.
-		await page.setContent(
-			'<button>Delete</button><button>Delete</button>',
-		);
+		await page.setContent('<button>Delete</button><button>Delete</button>');
 		const deleter = heal(
 			page,
 			'destructive delete button',
@@ -50,18 +48,16 @@ test.describe('defect detection proof', () => {
 			rejection: rejection?.message,
 			attemptLog: log,
 		});
-		expect(
-			log.some((a) => a.outcome === 'ambiguous-rejected'),
-		).toBe(true);
+		expect(log.some((a) => a.outcome === 'ambiguous-rejected')).toBe(true);
 		expect(deleter.getHealingEvents()).toHaveLength(0);
 	});
 
-	test('(b) an API contract break is caught by schema validation', async ({
-	}, testInfo) => {
+	// biome-ignore lint/correctness/noEmptyPattern: need testInfo without fixtures
+	test('(b) an API contract break is caught by schema validation', async ({}, testInfo) => {
 		// Defect: the API started returning users without `email`
 		// (a backend deploy dropped the field). Status is still 200 —
 		// only contract validation catches it.
-		const server: Server = createServer((req, res) => {
+		const server: Server = createServer((_req, res) => {
 			res.writeHead(200, { 'Content-Type': 'application/json' });
 			res.end(JSON.stringify([{ id: 1, name: 'Ada' }])); // email missing!
 		});

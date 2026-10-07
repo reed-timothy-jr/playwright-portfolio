@@ -1,109 +1,119 @@
 # PowerBase Playwright Framework
 
-> While standard frameworks just *check* your app, PowerBase **analyzes, heals, and stress-tests** it.
+> A base test framework for enterprise applications — from small/medium businesses to large teams — and a senior-SDET portfolio piece.
 
-A senior-grade Playwright + TypeScript starter framework: self-healing locators, chaos-engineering fault injection, typed API client, evidence-rich reporting, Docker one-liner, and CI out of the box. Built as a portfolio showpiece — and as a drop-in starter kit for any new engagement.
+Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its own. Around them, a supporting layer (self-healing locators, chaos engineering, evidence capture) that serves the pillars instead of competing with them. While standard frameworks just *check* your app, PowerBase **proves it can find defects** — see the [defect-detection proof suite](docs/expected-outcomes.md).
 
 [![CI](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml)
 ![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## What's inside
+## The five pillars
 
-| Area | What you get |
-|---|---|
-| **Self-healing locators** | `src/framework/selfHealing.ts` — primary locator + ordered fallback strategies (role, text, CSS). Every healing event is logged with before/after strategy. Optional AI provider hook (any LLM) as a last resort — deterministic strategies always run first. |
-| **Chaos engineering** | `src/framework/chaos.ts` — network faults (latency, error-rate aborts, interception log) plus runtime faults (offline mode, CPU throttling, storage wipes). |
-| **API testing** | `src/framework/apiClient.ts` — typed, dependency-free client (GET/POST/PUT/PATCH/DELETE) with Zod contract validation. |
-| **Database layer** | `src/framework/db.ts` — one interface, two implementations: real Postgres (`pg`, env-configured) and in-process Postgres (PGlite) for hermetic specs. |
-| **Auth sessions** | `tests/auth.setup.ts` — logs in once, saves storage state; the `chromium-auth` project reuses it. No repeated logins. |
-| **Accessibility** | axe-core suite scoped to critical/serious WCAG 2.0A/2.1AA violations. |
-| **Visual regression** | Deterministic fixture baselines — stable across machines and CI. |
-| **Performance budgets** | Navigation Timing API assertions with env-configurable budgets, timing attached as evidence. |
-| **Evidence** | `src/framework/evidence.ts` — screenshots, DOM snapshots, and structured JSON attached to every report. Failures ship with proof. |
-| **Page objects** | `src/pages/` — named locators, action methods that read like the user story. |
-| **Fixtures** | `src/fixtures.ts` — `api` + `chaos` fixtures on every test, auto-cleaned. |
-| **CI** | `.github/workflows/ci.yml` — typecheck → smoke → API → resilience, HTML report artifact. |
-| **Docker** | `Dockerfile` — `docker build -t powerbase . && docker run powerbase`. |
+| Pillar | What it covers | Run it | What "good" looks like |
+|---|---|---|---|
+| **e2e** | Critical user paths through the UI (login, authenticated flows, the flagship API→UI→DB→fault workflow) | `npm run test:e2e` | Green on every PR; page objects read like the user story |
+| **api** | Contract-level checks: Zod-validated responses, resource creation, 404/empty-set behavior | `npm run test:api` | Schemas catch backend drift that status codes miss |
+| **db** | The persistence contract: seed → act → verify, constraint enforcement | `npm run test:db` | Same specs pass on PGlite (fast lane) and real Postgres (integration lane) |
+| **perf** | Page-load and time-to-first-byte budgets via the Navigation Timing API | `npm run test:perf` | Budgets in env (`PERF_BUDGET_LOAD_MS`); timing attached as evidence |
+| **sec** | Baseline security: response headers, authz boundaries, dependency audit | `npm run test:sec` | Missing headers fail the build; forged sessions bounced |
+
+```bash
+npm run test:pillars   # all five pillars
+npm run test:all       # pillars + supporting suites (a11y, visual, unit)
+npm run test:proof     # defect-detection proof suite (evidence, not regression)
+npm run verify         # lint + typecheck + test:all — the full gate
+```
+
+## Supporting layer
+
+Nice-to-haves that serve the pillars — in `src/support/`:
+
+| Support | What it does | Serves |
+|---|---|---|
+| **Self-healing locators** | Ordered fallback strategies when the primary locator breaks; heals ONLY on unambiguous matches — ambiguous matches are rejected and logged, never silently healed | e2e stability |
+| **Chaos engineering** | Bounded fault injection: latency, error-rate aborts, offline, CPU throttle, storage wipes; experiments always restore state | e2e/perf resilience proofs |
+| **Typed API client** | Dependency-free `fetch` wrapper (GET/POST/PUT/PATCH/DELETE) with timeouts and header merging | api pillar, flagship workflow |
+| **Evidence** | Screenshots, DOM snapshots, structured JSON (healing events, chaos logs, API payloads) attached to every report | every failure |
+| **Page objects** | `src/pages/` — named locators, action methods that read like the user story | e2e pillar |
+| **Accessibility** | axe-core, critical/serious WCAG 2.0A/2.1AA (`npm run test:support`) | quality scope |
+| **Visual regression** | Deterministic fixture baselines (`npm run test:support`) | quality scope |
 
 ## Quickstart
 
 ```bash
 npm install
-npx playwright install chromium   # or --with-deps on Linux
-cp .env.example .env              # point BASE_URL at your app
+npx playwright install chromium
+cp .env.example .env
 
-npm run test:smoke        # UI critical path
-npm run test:api          # API contract checks
-npm run test:resilience   # self-healing + chaos demos
-npm test                  # everything, all browsers
-npm run report            # open the HTML report
+npm run test:e2e    # UI critical path (bundled fixture app — no network needed)
+npm run test:api    # API contract checks
+npm run test:sec    # baseline security checks
+npm run verify      # the whole gate
+npm run report      # open the HTML report
 ```
 
-The example suites run against stable public targets (`the-internet.herokuapp.com`, `jsonplaceholder.typicode.com`) so the repo is green on clone. Point `BASE_URL` / `API_BASE_URL` at your app and write page objects in `src/pages/`.
+**Target app:** web-app specs run against the **bundled fixture demo app** by default — a tiny login flow + JSON API backed by in-process Postgres, started per worker. Deterministic, offline-safe, green on clone. Set `BASE_URL` to run the same specs against your own app instead (it must expose a compatible login flow).
+
+**Database lanes:** `createDatabaseClient()` picks the lane — PGlite in-process by default; set `DB_HOST` (+ `DB_USER`, `DB_PASSWORD`, `DB_NAME`) for the real-Postgres integration lane. Same specs, same interface.
 
 ## Project structure
 
 ```
 src/
-  framework/      # the reusable core: self-healing, chaos, API client, DB layer, evidence, config
+  support/        # the supporting layer: selfHealing, chaos, apiClient,
+                  #   db, evidence, config, fixtureApp
   pages/          # page objects (your app goes here)
-  fixtures.ts     # test.extend wiring (api, chaos)
+  fixtures.ts     # test.extend wiring (api, chaos, appTarget)
 tests/
-  auth.setup.ts   # logs in once, saves storage state for the auth project
-  smoke/          # critical path, runs on every PR (incl. authenticated specs)
-  api/            # contract-level API checks (Zod-validated)
-  db/             # database layer specs (in-process Postgres, no infra needed)
-  a11y/           # axe-core accessibility checks
-  visual/         # visual regression (deterministic fixture baselines)
-  perf/           # performance budgets via Navigation Timing API
-  resilience/     # self-healing + chaos engineering demos
+  auth.setup.ts   # logs in once, saves storage state for e2e-auth
+  e2e/            # E2E pillar (incl. flagship.workflow.spec.ts)
+  api/            # API pillar
+  db/             # DB pillar
+  perf/           # PERF pillar
+  sec/            # SEC pillar
+  a11y/           # supporting: accessibility
+  visual/         # supporting: visual regression
+  proof/          # defect-detection proof suite (evidence, not regression)
+  unit/           # focused tests for the framework primitives
 docs/
   adr-001-why-playwright.md
+  adr-002-five-pillars.md
   locator-strategy.md
-  whats-next.md   # honest gap list, in priority order
+  expected-outcomes.md   # defect-detection scenario map
+  whats-next.md          # honest gap list, in priority order
+scripts/
+  report-flakiness.mjs   # first-attempt vs retry breakdown
 ```
 
 ## Why these tests
 
-Each suite exists for a risk reason, not a coverage number:
+Each pillar exists for a risk reason, not a coverage number:
 
-- **smoke/login** — authentication is the gateway to every other flow. If login breaks, nothing downstream is testable, so it runs on every PR.
-- **api/users** — contract checks: typed responses (Zod-validated), resource creation, and 404 behavior. APIs are where integration bugs hide.
-- **resilience/self-healing** — locator rot is the #1 killer of UI suites. This suite proves the framework recovers from a stale selector *and* logs the healing as evidence.
-- **resilience/chaos** — happy-path green means little if the app collapses under latency or 5xx responses. Fault injection verifies recovery behavior.
-- **db/users** — proves the persistence contract: seeded data is queryable by the login flow, unknowns stay unknown, uniqueness is enforced. Runs on in-process Postgres — no Docker needed.
-- **a11y/login** — axe-core on the login page, failing only on critical/serious impacts.
-- **visual/login** — deterministic fixture baseline; catches unintended UI drift.
-- **perf/login** — page load and time-to-first-byte against env-configurable budgets.
-
-## What I'd improve next
-
-See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priority order: DB validation layer, flaky-test quarantine, visual baselines, Axe accessibility, API auth flows, test-data factories, Gherkin layer, Allure, performance budgets, AI failure-analysis agent.
+- **e2e/login** — authentication is the gateway to every other flow. If login breaks, nothing downstream is testable.
+- **e2e/flagship** — the one scenario that proves the layers work together: API creates data → UI operates on it → DB verifies persistence → a fault is injected and recovery asserted → evidence attached → owned records cleaned up.
+- **api/users** — contract checks: Zod-validated responses, resource creation, 404 and empty-set behavior. APIs are where integration bugs hide.
+- **db/users** — the persistence contract: seeded data is queryable, unknowns stay unknown, uniqueness enforced. Scoped tables keep parallel workers isolated.
+- **perf/login** — load and TTFB against env-configurable budgets, timing attached as evidence.
+- **sec/headers + sec/auth** — baseline hygiene: security headers present, no server-tech leakage, anonymous and forged sessions rejected. Baseline, not a pentest.
+- **proof/defect-detection** — the credibility suite: planted defects (ambiguous UI, broken API contract, false-positive UI) that the framework must *detect*. Green here means the framework can find bugs, not just pass.
 
 ## Design principles
 
-1. **The primary locator is the contract.** Healing recovers the run; it never silently rewrites the suite — healed locators need human approval to be committed.
-2. **Evidence over assumptions.** Every failure attaches screenshots, DOM, and structured JSON (healing events, chaos interceptions).
-3. **Deterministic first, AI last.** Fallback strategies run before any LLM hook, and the model is replaceable.
-4. **Chaos stays bounded.** Fault injection is scoped by URL pattern, logged, and never pointed at production without approval.
+1. **Pillars first, features second.** The five testing modules are the product; everything else exists to make them stronger.
+2. **The primary locator is the contract.** Healing recovers the run on unambiguous matches only — ambiguous matches are rejected and logged, never silently healed. Strict mode fails fast on an ambiguous primary.
+3. **Evidence over assumptions.** Every failure attaches screenshots, DOM, and structured JSON. A recovered test is always distinguishable from a clean pass in the audit log.
+4. **Deterministic by default.** Fixture app, PGlite, seeded data — green on clone with no network. External targets are an override, not a requirement.
+5. **Chaos stays bounded.** Fault injection is scoped by URL pattern, logged, always restores state — even when the test body throws.
 
-## Roadmap
+## What I'd improve next
 
-- [x] DB validation layer (Postgres + in-process PGlite)
-- [ ] Gherkin/BDD authoring layer over the same execution core
-- [ ] Flaky-test quarantine (detect retry-passes, quarantine with owner + deadline)
-- [ ] Visual baselines for real app pages (per-environment generation)
-- [ ] Axe-core on all critical flows (currently login only)
-- [ ] API auth flows (token fixtures, per-suite auth state)
-- [ ] Test-data factories (seeded, isolated, deterministic cleanup)
-- [ ] Allure reporting alongside HTML
-- [ ] AI failure-analysis agent (see [PowerBase AI PRD](https://github.com/Reed-Timothy-jr/PowerBasePlaywright))
+See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priority order.
 
 ## Author
 
-**Timothy Reed** — QA Engineer (Playwright + TypeScript), 7+ years across Catalyte and GEICO.
+**Timothy Reed** — Senior QA / SDET (Playwright + TypeScript), 11+ years across Catalyte and GEICO.
 [LinkedIn](https://www.linkedin.com/in/timothy-reed-jr) · [timinit.org](https://timinit.org)
 
 MIT licensed — use it, fork it, ship it.

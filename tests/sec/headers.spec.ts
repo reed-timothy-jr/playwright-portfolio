@@ -18,9 +18,7 @@ const REQUIRED_HEADERS = [
 	'referrer-policy', // controls referrer leakage
 ] as const;
 
-async function fetchHeaders(
-	url: string,
-): Promise<Headers | null> {
+async function fetchHeaders(url: string): Promise<Headers | null> {
 	try {
 		const res = await fetch(url, { redirect: 'manual' });
 		return res.headers;

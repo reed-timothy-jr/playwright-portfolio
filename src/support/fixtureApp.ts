@@ -59,12 +59,16 @@ function hashPassword(password: string): string {
 
 function signSession(userId: number): string {
 	const payload = String(userId);
-	const sig = createHmac('sha256', SESSION_SECRET).update(payload).digest('hex');
+	const sig = createHmac('sha256', SESSION_SECRET)
+		.update(payload)
+		.digest('hex');
 	return `${payload}.${sig}`;
 }
 
 function verifySession(cookieHeader: string | undefined): number | null {
-	const match = new RegExp(`${SESSION_COOKIE}=([^;]+)`).exec(cookieHeader ?? '');
+	const match = new RegExp(`${SESSION_COOKIE}=([^;]+)`).exec(
+		cookieHeader ?? '',
+	);
 	if (!match) return null;
 	const [payload, sig] = match[1].split('.');
 	if (!payload || !sig) return null;
@@ -194,7 +198,9 @@ export async function startFixtureApp(port = 0): Promise<FixtureApp> {
 		}
 	});
 
-	await new Promise<void>((resolve) => server.listen(port, '127.0.0.1', resolve));
+	await new Promise<void>((resolve) =>
+		server.listen(port, '127.0.0.1', resolve),
+	);
 	const address = server.address();
 	const actualPort =
 		typeof address === 'object' && address ? address.port : port;
@@ -240,15 +246,21 @@ async function handle(
 		const form = parseForm(await readBody(req));
 		const rows = await db.query<UserRow>(
 			'SELECT id, username, password_hash FROM fixture_users WHERE username = $1',
-			[form['username'] ?? ''],
+			[form.username ?? ''],
 		);
 		const user = rows[0];
 		if (!user) {
-			redirect(res, '/login?flash=' + encodeURIComponent('Your username is invalid!'));
+			redirect(
+				res,
+				`/login?flash=${encodeURIComponent('Your username is invalid!')}`,
+			);
 			return;
 		}
-		if (user.password_hash !== hashPassword(form['password'] ?? '')) {
-			redirect(res, '/login?flash=' + encodeURIComponent('Your password is invalid!'));
+		if (user.password_hash !== hashPassword(form.password ?? '')) {
+			redirect(
+				res,
+				`/login?flash=${encodeURIComponent('Your password is invalid!')}`,
+			);
 			return;
 		}
 		redirect(res, '/secure', {
@@ -262,7 +274,8 @@ async function handle(
 		if (!userId) {
 			redirect(
 				res,
-				'/login?flash=' + encodeURIComponent('You must log in to view the secure area!'),
+				'/login?flash=' +
+					encodeURIComponent('You must log in to view the secure area!'),
 			);
 			return;
 		}
@@ -306,11 +319,15 @@ async function handle(
 			return;
 		}
 		if (typeof payload.username !== 'string' || payload.username.length < 3) {
-			sendJson(res, 400, { error: 'username must be a string of at least 3 characters' });
+			sendJson(res, 400, {
+				error: 'username must be a string of at least 3 characters',
+			});
 			return;
 		}
 		if (typeof payload.password !== 'string' || payload.password.length < 8) {
-			sendJson(res, 400, { error: 'password must be a string of at least 8 characters' });
+			sendJson(res, 400, {
+				error: 'password must be a string of at least 8 characters',
+			});
 			return;
 		}
 		try {

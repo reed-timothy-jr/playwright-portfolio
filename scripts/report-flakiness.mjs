@@ -10,7 +10,7 @@
  *
  * Usage: npm run report:flakiness
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const REPORT = 'test-results/results.json';
 
@@ -29,7 +29,6 @@ function walk(suites, filePrefix = '') {
 			for (const t of spec.tests ?? []) {
 				const results = t.results ?? [];
 				const first = results.find((r) => r.retry === 0);
-				const retried = results.some((r) => r.retry > 0);
 				const finalOk = t.status === 'expected';
 				let verdict;
 				if (!first) verdict = 'NO-RESULT';
@@ -54,9 +53,7 @@ const counts = { CLEAN: 0, FLAKY: 0, FAILED: 0, SKIPPED: 0, 'NO-RESULT': 0 };
 for (const r of rows) counts[r.verdict] = (counts[r.verdict] ?? 0) + 1;
 
 console.log('\n[flakiness] first-attempt vs retries\n');
-console.log(
-	`${'VERDICT'.padEnd(10)} ${'ATTEMPTS'.padEnd(9)} SPEC`,
-);
+console.log(`${'VERDICT'.padEnd(10)} ${'ATTEMPTS'.padEnd(9)} SPEC`);
 for (const r of rows) {
 	console.log(
 		`${r.verdict.padEnd(10)} ${String(r.attempts).padEnd(9)} ${r.file} › ${r.title}`,

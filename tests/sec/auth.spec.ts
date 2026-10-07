@@ -19,10 +19,7 @@ test.describe('authorization', () => {
 		await expect(page.locator('h2')).not.toContainText('Secure Area');
 	});
 
-	test('tampered session cookies are rejected', async ({
-		page,
-		appTarget,
-	}) => {
+	test('tampered session cookies are rejected', async ({ page, appTarget }) => {
 		await page.context().addCookies([
 			{
 				name: 'pb_session',

@@ -30,7 +30,11 @@ async function startServer(
 		const chunks: Buffer[] = [];
 		req.on('data', (c: Buffer) => chunks.push(c));
 		req.on('end', () => {
-			const { status, body, delayMs = 0 } = handler({
+			const {
+				status,
+				body,
+				delayMs = 0,
+			} = handler({
 				body: Buffer.concat(chunks).toString('utf8'),
 				headers: req.headers,
 			});
@@ -106,7 +110,7 @@ test.describe('api client unit', () => {
 	test('withHeaders sends custom headers (e.g. auth tokens)', async () => {
 		let seenAuth: string | string[] | undefined;
 		const srv = await startServer(({ headers }) => {
-			seenAuth = headers['authorization'];
+			seenAuth = headers.authorization;
 			return { status: 200, body: '{}' };
 		});
 		try {
