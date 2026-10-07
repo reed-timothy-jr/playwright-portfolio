@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { config } from '../framework/config';
+import { config } from '../support/config';
 
 /** Base page: every page object gets navigation + the framework config. */
 export abstract class BasePage {

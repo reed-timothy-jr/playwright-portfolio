@@ -1,5 +1,5 @@
 import { expect, test } from '../../src/fixtures';
-import { PGliteDatabase } from '../../src/framework/db';
+import { PGliteDatabase } from '../../src/support/db';
 
 /**
  * Database layer — runnable against in-process Postgres (PGlite): no

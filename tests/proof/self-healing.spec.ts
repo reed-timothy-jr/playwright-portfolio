@@ -1,6 +1,6 @@
 import { expect, test } from '../../src/fixtures';
-import { attachJson } from '../../src/framework/evidence';
-import { heal } from '../../src/framework/selfHealing';
+import { attachJson } from '../../src/support/evidence';
+import { heal } from '../../src/support/selfHealing';
 
 /**
  * Self-healing demo — the primary locator is deliberately stale

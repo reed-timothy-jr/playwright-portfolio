@@ -1,5 +1,5 @@
 import { expect, test } from '../../src/fixtures';
-import { attachJson } from '../../src/framework/evidence';
+import { attachJson } from '../../src/support/evidence';
 
 /**
  * Performance budgets — Navigation Timing API, no external tooling.

@@ -1,7 +1,7 @@
 import { test as base } from '@playwright/test';
-import { ApiClient } from './framework/apiClient';
-import { ChaosInjector } from './framework/chaos';
-import { config } from './framework/config';
+import { ApiClient } from './support/apiClient';
+import { ChaosInjector } from './support/chaos';
+import { config } from './support/config';
 
 export interface PowerBaseFixtures {
 	/** Typed API client pointed at API_BASE_URL. */
