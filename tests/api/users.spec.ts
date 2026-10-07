@@ -61,9 +61,7 @@ test.describe('users api', () => {
 		}
 	});
 
-	test('GET /users/1 returns a single contract-valid user', async ({
-		api,
-	}) => {
+	test('GET /users/1 returns a single contract-valid user', async ({ api }) => {
 		const res = await api.get<unknown>('/users/1');
 		expect(res.status).toBe(200);
 		const parsed = UserSchema.safeParse(res.data);
