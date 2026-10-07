@@ -2,10 +2,10 @@ import { expect, test } from '../../src/fixtures';
 import { attachJson } from '../../src/support/evidence';
 
 /**
- * Performance budgets — Navigation Timing API, no external tooling.
- * Asserts the login page loads within budget and attaches the full
- * timing breakdown as evidence. Budgets come from env so CI can
- * tighten them per environment (PERF_BUDGET_LOAD_MS).
+ * PERF pillar — performance budgets via the Navigation Timing API.
+ * No external tooling. Asserts the login page loads within budget and
+ * attaches the full timing breakdown as evidence. Budgets come from env
+ * so CI can tighten them per environment (PERF_BUDGET_LOAD_MS).
  */
 const LOAD_BUDGET_MS = Number(process.env.PERF_BUDGET_LOAD_MS ?? 4000);
 
@@ -17,8 +17,8 @@ interface NavTiming {
 }
 
 test.describe('performance budgets', () => {
-	test('login page loads within budget', async ({ page }, testInfo) => {
-		await page.goto('/login');
+	test('login page loads within budget', async ({ page, appTarget }, testInfo) => {
+		await page.goto(`${appTarget.url}/login`);
 
 		const timing = await page.evaluate((): NavTiming => {
 			const [nav] = performance.getEntriesByType(

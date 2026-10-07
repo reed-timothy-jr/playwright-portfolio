@@ -3,17 +3,18 @@ import { attachJson } from '../../src/support/evidence';
 import { LoginPage } from '../../src/pages/login.page';
 
 /**
- * Chaos engineering — bounded fault injection against a test target.
+ * PROOF suite — executable evidence that bounded fault injection works.
  * Proves the app (and the suite) behaves sanely under real-world faults.
  */
 test.describe('chaos engineering', () => {
 	test('login survives 1.5s injected latency on the auth call', async ({
 		page,
+		appTarget,
 		chaos,
 	}, testInfo) => {
 		await chaos.start({ latencyMs: 1500, urlPattern: '**/authenticate' });
 
-		const login = new LoginPage(page);
+		const login = new LoginPage(page, appTarget.url);
 		await login.login('tomsmith', 'SuperSecretPassword!');
 
 		await expect(login.flash).toContainText('You logged into a secure area!', {
@@ -27,6 +28,7 @@ test.describe('chaos engineering', () => {
 
 	test('aborted requests surface as observable failures, not hangs', async ({
 		page,
+		appTarget,
 		chaos,
 	}, testInfo) => {
 		await chaos.start({
@@ -35,7 +37,7 @@ test.describe('chaos engineering', () => {
 			urlPattern: '**/login',
 		});
 
-		await expect(page.goto('/login')).rejects.toThrow();
+		await expect(page.goto(`${appTarget.url}/login`)).rejects.toThrow();
 
 		const interceptions = chaos.getInterceptions();
 		expect(

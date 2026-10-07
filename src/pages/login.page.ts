@@ -1,11 +1,17 @@
+import type { Page } from '@playwright/test';
 import { BasePage } from './base.page';
 
 /**
- * Login page object — example target: the-internet.herokuapp.com/login.
- * Swap selectors for your app; the pattern (named locators, action methods
- * that read like the user story) stays the same.
+ * Login page object — targets the bundled fixture app by default
+ * (see src/support/fixtureApp.ts); pass a baseURL for your own app.
+ * Pattern (named locators, action methods that read like the user story)
+ * stays the same — only selectors change per app.
  */
 export class LoginPage extends BasePage {
+	constructor(page: Page, baseURL?: string) {
+		super(page, baseURL);
+	}
+
 	private readonly path = '/login';
 
 	get username() {

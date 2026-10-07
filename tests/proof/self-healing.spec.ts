@@ -3,15 +3,18 @@ import { attachJson } from '../../src/support/evidence';
 import { heal } from '../../src/support/selfHealing';
 
 /**
- * Self-healing demo — the primary locator is deliberately stale
- * (mirrors a real-world class rename: submit-primary-btn -> radius).
- * The framework heals through fallback strategies and logs the event.
+ * PROOF suite — executable evidence that the self-healing primitive works.
+ * The primary locator is deliberately stale (mirrors a real-world class
+ * rename); the framework heals through fallback strategies and logs the
+ * event. Part of the defect-detection story: the audit record proves a
+ * recovered test is never silently passed off as a clean one.
  */
 test.describe('self-healing locators', () => {
 	test('heals a stale submit-button locator via role fallback', async ({
 		page,
+		appTarget,
 	}, testInfo) => {
-		await page.goto('/login');
+		await page.goto(`${appTarget.url}/login`);
 
 		const submit = heal(
 			page,
@@ -44,8 +47,9 @@ test.describe('self-healing locators', () => {
 
 	test('throws a descriptive error when every strategy fails', async ({
 		page,
+		appTarget,
 	}) => {
-		await page.goto('/login');
+		await page.goto(`${appTarget.url}/login`);
 		const missing = heal(
 			page,
 			'ghost element',

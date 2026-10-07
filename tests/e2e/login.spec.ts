@@ -2,20 +2,25 @@ import { expect, test } from '../../src/fixtures';
 import { LoginPage } from '../../src/pages/login.page';
 
 /**
- * Smoke suite — the critical path. Fast, stable, runs on every PR.
- * Target: https://the-internet.herokuapp.com (swap BASE_URL for your app).
+ * E2E pillar — the critical user path, end to end through the UI.
+ * Runs against the bundled fixture app by default (deterministic, no
+ * network); point BASE_URL at your own app to run the same specs there.
  */
-test.describe('login smoke', () => {
-	test('valid credentials land in the secure area', async ({ page }) => {
-		const login = new LoginPage(page);
+test.describe('login e2e', () => {
+	test('valid credentials land in the secure area', async ({
+		page,
+		appTarget,
+	}) => {
+		const login = new LoginPage(page, appTarget.url);
 		await login.login('tomsmith', 'SuperSecretPassword!');
 		await expect(login.flash).toContainText('You logged into a secure area!');
 	});
 
 	test('invalid credentials show an error, not a silent failure', async ({
 		page,
+		appTarget,
 	}) => {
-		const login = new LoginPage(page);
+		const login = new LoginPage(page, appTarget.url);
 		await login.login('tomsmith', 'wrong-password');
 		await expect(login.flash).toContainText('Your password is invalid!');
 	});
