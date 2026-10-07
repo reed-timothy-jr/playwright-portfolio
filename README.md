@@ -58,6 +58,11 @@ npm run report      # open the HTML report
 
 **Database lanes:** `createDatabaseClient()` picks the lane — PGlite in-process by default; set `DB_HOST` (+ `DB_USER`, `DB_PASSWORD`, `DB_NAME`) for the real-Postgres integration lane. Same specs, same interface.
 
+## Environment notes
+
+- **Restricted networks:** the e2e/perf/sec/a11y pillars run against the bundled fixture app — no external network needed, ever. The api pillar targets `API_BASE_URL` (default: jsonplaceholder); if your environment blocks outbound HTTP POST, the suite's preflight probe skips the POST-dependent spec loudly instead of failing. The client's POST path is still covered by `tests/unit/apiClient.unit.spec.ts` and the flagship workflow.
+- **Dependency audit:** `npm run audit:sec` fails the build on high+ severity advisories. Some sandboxes block the npm audit endpoint — CI runs it; run it locally where the registry is reachable.
+
 ## Project structure
 
 ```
