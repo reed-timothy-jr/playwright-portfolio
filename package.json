@@ -7,6 +7,7 @@
 		"@types/node": "^22.0.0",
 		"@types/pg": "^8.23.1",
 		"dotenv": "^16.4.5",
+		"tsx": "^4.23.15",
 		"typescript": "^5.6.0"
 	},
 	"keywords": [
@@ -42,7 +43,9 @@
 		"audit:sec": "npm audit --audit-level=high",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
-		"lint:fix": "biome check --write ."
+		"lint:fix": "biome check --write .",
+		"recon": "tsx scripts/recon.ts",
+		"scaffold": "tsx scripts/scaffold.ts"
 	},
 	"type": "commonjs",
 	"version": "0.1.0",

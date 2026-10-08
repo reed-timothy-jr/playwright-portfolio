@@ -7,3 +7,9 @@ playwright/.auth/
 .env
 .DS_Store
 *.log
+
+# Recon scaffolds are review-and-promote starting points, not suite code.
+# Keep them out of the repo; promote keepers into the real suites.
+src/pages/generated/
+tests/e2e/generated/
+app-model.json

@@ -9,6 +9,7 @@ Done in the five-pillar restructure (2026-10-07) — no longer gaps:
 - ~~Flagship API→UI→DB workflow~~ — `tests/e2e/flagship.workflow.spec.ts`
 - ~~PGlite vs real-Postgres lanes~~ — `createDatabaseClient()`, documented in README
 - ~~First-attempt vs retry visibility~~ — `scripts/report-flakiness.mjs`
+- ~~Recon: point-at-any-app crawler + scaffold generator~~ — `src/support/recon/` (`crawlApp` → versioned `AppModel` → `generateFromModel`), `npm run recon` / `npm run scaffold`, `docs/recon.md`, ADR-003 (scaffolds, not suites)
 
 Still open, in priority order:
 

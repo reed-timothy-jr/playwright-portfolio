@@ -39,6 +39,7 @@ Nice-to-haves that serve the pillars — in `src/support/`:
 | **Page objects** | `src/pages/` — named locators, action methods that read like the user story | e2e pillar |
 | **Accessibility** | axe-core, critical/serious WCAG 2.0A/2.1AA (`npm run test:support`) | quality scope |
 | **Visual regression** | Deterministic fixture baselines (`npm run test:support`) | quality scope |
+| **Recon** | Read-only app crawler → versioned `AppModel` → reviewable page-object/smoke scaffolds (`npm run recon`, `npm run scaffold`) | test creation |
 
 ## Quickstart
 
@@ -54,6 +55,8 @@ npm run verify      # the whole gate
 npm run report      # open the HTML report
 ```
 
+**Point it at any app:** `npm run recon -- --url https://your-app` crawls (read-only, same-origin) and writes a versioned `app-model.json`; `npm run scaffold -- --model app-model.json` generates page objects + smoke specs under `generated/` for you to review and promote. See [docs/recon.md](docs/recon.md).
+
 **Target app:** web-app specs run against the **bundled fixture demo app** by default — a tiny login flow + JSON API backed by in-process Postgres, started per worker. Deterministic, offline-safe, green on clone. Set `BASE_URL` to run the same specs against your own app instead (it must expose a compatible login flow).
 
 **Database lanes:** `createDatabaseClient()` picks the lane — PGlite in-process by default; set `DB_HOST` (+ `DB_USER`, `DB_PASSWORD`, `DB_NAME`) for the real-Postgres integration lane. Same specs, same interface.
@@ -68,8 +71,8 @@ npm run report      # open the HTML report
 ```
 src/
   support/        # the supporting layer: selfHealing, chaos, apiClient,
-                  #   db, evidence, config, fixtureApp
-  pages/          # page objects (your app goes here)
+                  #   db, evidence, config, fixtureApp, recon/
+  pages/          # page objects (your app goes here; recon writes to pages/generated/)
   fixtures.ts     # test.extend wiring (api, chaos, appTarget)
 tests/
   auth.setup.ts   # logs in once, saves storage state for e2e-auth
@@ -85,11 +88,15 @@ tests/
 docs/
   adr-001-why-playwright.md
   adr-002-five-pillars.md
+  adr-003-recon-scaffolds.md   # why recon generates scaffolds, not suites
   locator-strategy.md
+  recon.md                     # point → crawl → model → scaffold → review
   expected-outcomes.md   # defect-detection scenario map
   whats-next.md          # honest gap list, in priority order
 scripts/
   report-flakiness.mjs   # first-attempt vs retry breakdown
+  recon.ts               # crawl any app → app-model.json (tsx)
+  scaffold.ts            # app-model.json → generated page objects + smoke specs (tsx)
 ```
 
 ## Why these tests
@@ -111,6 +118,7 @@ Each pillar exists for a risk reason, not a coverage number:
 3. **Evidence over assumptions.** Every failure attaches screenshots, DOM, and structured JSON. A recovered test is always distinguishable from a clean pass in the audit log.
 4. **Deterministic by default.** Fixture app, PGlite, seeded data — green on clone with no network. External targets are an override, not a requirement.
 5. **Chaos stays bounded.** Fault injection is scoped by URL pattern, logged, always restores state — even when the test body throws.
+6. **Scaffolds, not suites.** Recon generates reviewable starting points, never finished tests. Generation without a human deciding what the contracts are would encode the app's bugs as truth.
 
 ## What I'd improve next
 
