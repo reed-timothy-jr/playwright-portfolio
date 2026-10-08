@@ -45,11 +45,15 @@ export async function attachJson(
 	});
 }
 
-/** One call: screenshot + DOM + console errors, for defect-grade evidence. */
+/** One call: screenshot + DOM snapshot, for defect-grade evidence. */
 export async function captureFailureEvidence(
 	testInfo: TestInfo,
 	page: Page,
+	consoleErrors: string[] = [],
 ): Promise<void> {
 	await attachScreenshot(testInfo, page);
 	await attachDomSnapshot(testInfo, page);
+	if (consoleErrors.length > 0) {
+		await attachJson(testInfo, 'console-errors', consoleErrors);
+	}
 }

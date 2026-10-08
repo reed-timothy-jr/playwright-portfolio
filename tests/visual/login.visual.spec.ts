@@ -4,10 +4,13 @@ import { expect, test } from '../../src/fixtures';
  * Visual regression — deterministic by design.
  *
  * The spec renders a fixed fixture page (no network, no timestamps, no
- * animations), so baselines are stable across machines and CI. This is the
- * pattern for component/fixture-level visual testing. For full-page
- * coverage of your own app, add specs that navigate to real pages and
- * generate baselines per environment with --update-snapshots.
+ * animations). Baselines are platform-specific (font rendering differs
+ * between Linux/macOS/Windows): generate them per platform with
+ * `npx playwright test --project=visual --update-snapshots`, and keep the
+ * committed baseline for the platform CI runs on. This spec is the pattern
+ * for component/fixture-level visual testing. For full-page coverage of
+ * your own app, add specs that navigate to real pages and generate
+ * baselines per environment the same way.
  */
 const LOGIN_CARD_HTML = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Login</title>

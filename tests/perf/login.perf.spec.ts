@@ -8,6 +8,7 @@ import { attachJson } from '../../src/support/evidence';
  * so CI can tighten them per environment (PERF_BUDGET_LOAD_MS).
  */
 const LOAD_BUDGET_MS = Number(process.env.PERF_BUDGET_LOAD_MS ?? 4000);
+const TTFB_BUDGET_MS = Number(process.env.PERF_BUDGET_TTFB_MS ?? 1000);
 
 interface NavTiming {
 	domContentLoaded: number;
@@ -36,11 +37,17 @@ test.describe('performance budgets', () => {
 		});
 
 		await attachJson(testInfo, 'navigation-timing', {
-			budgetMs: LOAD_BUDGET_MS,
+			loadBudgetMs: LOAD_BUDGET_MS,
+			ttfbBudgetMs: TTFB_BUDGET_MS,
 			timing,
 		});
 
+		// loadEventEnd can still be 0 if read before the event fires — a 0
+		// must fail loudly, not slip under the budget.
+		expect(timing.load, 'load timing was captured').toBeGreaterThan(0);
 		expect(timing.load).toBeLessThan(LOAD_BUDGET_MS);
-		expect(timing.firstByte).toBeLessThan(LOAD_BUDGET_MS);
+		// TTFB gets its own budget: comparing server response time against
+		// the full page-load budget hides backend regressions.
+		expect(timing.firstByte).toBeLessThan(TTFB_BUDGET_MS);
 	});
 });

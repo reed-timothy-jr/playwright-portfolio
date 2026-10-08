@@ -10,8 +10,8 @@ import { heal } from '../../src/support/selfHealing';
 /**
  * PROOF suite — defect detection.
  *
- * The portfolio question this answers: "your suite is all green — but can
- * it actually FIND bugs?" Each scenario below plants a realistic defect and
+ * The question this answers: "your suite is all green — but can it
+ * actually FIND bugs?" Each scenario below plants a realistic defect and
  * asserts the framework DETECTS it. The tests themselves pass green, because
  * detection working is the asserted behavior.
  *

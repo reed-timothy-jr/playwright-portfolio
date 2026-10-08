@@ -29,22 +29,42 @@ export class ApiClient {
 			this.opts.timeoutMs ?? 15_000,
 		);
 		try {
-			const res = await fetch(`${this.opts.baseURL}${path}`, {
+			// Normalize slashes: baseURL 'http://x/' + path '/y' must not
+			// produce 'http://x//y'.
+			const url = `${this.opts.baseURL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+			const headers: Record<string, string> = {
+				...(this.opts.headers ?? {}),
+			};
+			// Only claim JSON when actually sending JSON — some servers
+			// reject a Content-Type on bodyless requests.
+			const payload = body === undefined ? undefined : JSON.stringify(body);
+			if (payload !== undefined) {
+				headers['Content-Type'] = 'application/json';
+			}
+			const res = await fetch(url, {
 				method,
-				headers: {
-					'Content-Type': 'application/json',
-					...(this.opts.headers ?? {}),
-				},
-				body: body === undefined ? undefined : JSON.stringify(body),
+				headers,
+				body: payload,
 				signal: controller.signal,
 			});
-			const headers: Record<string, string> = {};
+			const resHeaders: Record<string, string> = {};
 			res.headers.forEach((value, key) => {
-				headers[key] = value;
+				resHeaders[key] = value;
 			});
 			const text = await res.text();
-			const data = text ? (JSON.parse(text) as T) : (undefined as unknown as T);
-			return { status: res.status, data, headers };
+			// Never lose the status: an HTML error page is still evidence.
+			// Try JSON first, fall back to the raw text.
+			let data: T;
+			if (!text) {
+				data = undefined as unknown as T;
+			} else {
+				try {
+					data = JSON.parse(text) as T;
+				} catch {
+					data = text as unknown as T;
+				}
+			}
+			return { status: res.status, data, headers: resHeaders };
 		} finally {
 			clearTimeout(timer);
 		}

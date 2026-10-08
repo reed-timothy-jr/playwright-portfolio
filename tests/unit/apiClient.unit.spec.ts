@@ -85,11 +85,18 @@ test.describe('api client unit', () => {
 		}
 	});
 
-	test('malformed JSON bodies throw a SyntaxError, not silent garbage', async () => {
-		const srv = await startServer(() => ({ status: 200, body: 'not-json{{{' }));
+	test('non-JSON bodies return status + raw text instead of throwing', async () => {
+		const srv = await startServer(() => ({
+			status: 502,
+			body: '<html>bad gateway</html>',
+		}));
 		try {
 			const api = new ApiClient({ baseURL: srv.url });
-			await expect(api.get('/broken')).rejects.toThrow(SyntaxError);
+			// The old behavior threw SyntaxError here and LOST the 502.
+			// A test client must never lose the status.
+			const res = await api.get('/broken');
+			expect(res.status).toBe(502);
+			expect(res.data).toBe('<html>bad gateway</html>');
 		} finally {
 			await srv.close();
 		}

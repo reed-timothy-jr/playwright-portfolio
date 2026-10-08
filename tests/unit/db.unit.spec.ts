@@ -11,8 +11,40 @@ import {
  */
 test.describe('database utilities unit', () => {
 	test('createDatabaseClient picks the PGlite lane without DB_HOST', () => {
-		expect(process.env.DB_HOST).toBeUndefined();
-		expect(createDatabaseClient()).toBeInstanceOf(PGliteDatabase);
+		// The lane is env-driven: stub the env inside the test instead of
+		// asserting on the ambient environment, so the suite also passes
+		// for engineers who DO use the Postgres lane daily.
+		const saved = process.env.DB_HOST;
+		delete process.env.DB_HOST;
+		try {
+			expect(createDatabaseClient()).toBeInstanceOf(PGliteDatabase);
+		} finally {
+			if (saved !== undefined) process.env.DB_HOST = saved;
+		}
+	});
+
+	test('concurrent first queries share one PGlite instance', async () => {
+		const db = new PGliteDatabase();
+		try {
+			const table = scopedName('race');
+			// Fire before any query has completed: without promise caching
+			// this would initialize two databases and the table would be
+			// invisible to half the queries.
+			const [a, b] = await Promise.all([
+				db.query(`CREATE TABLE ${table} (id SERIAL PRIMARY KEY)`),
+				db.query(`SELECT 1 AS one`),
+			]);
+			expect(a).toEqual([]);
+			expect(b).toEqual([{ one: 1 }]);
+			const check = await db.query(
+				`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_name = $1`,
+				[table],
+			);
+			expect(Number((check[0] as { n: string }).n)).toBe(1);
+			await db.query(`DROP TABLE ${table}`);
+		} finally {
+			await db.close();
+		}
 	});
 
 	test('scopedName generates unique, safe identifiers', () => {

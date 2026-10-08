@@ -251,6 +251,28 @@ export async function crawlApp(
 			links = await extractSameOriginLinks(page, base, includeSubdomains).catch(
 				() => [],
 			);
+			// Form actions are API surface too: a POST to /authenticate is an
+			// endpoint even when no XHR was observed for it.
+			const pageUrl = new URL(page.url());
+			for (const form of forms) {
+				if (!form.action) continue;
+				let actionUrl: URL;
+				try {
+					actionUrl = new URL(form.action, pageUrl);
+				} catch {
+					continue;
+				}
+				if (actionUrl.origin !== base.origin) continue;
+				const path = normalizeApiPath(actionUrl.pathname);
+				const key = `${form.method.toUpperCase()} ${path}`;
+				if (!apiSeen.has(key)) {
+					apiSeen.set(key, {
+						method: form.method.toUpperCase(),
+						path,
+						source: 'form-action',
+					});
+				}
+			}
 		}
 
 		page.off('console', onConsole);

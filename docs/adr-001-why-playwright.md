@@ -17,7 +17,7 @@ Playwright with TypeScript.
 2. **One API for Chromium, Firefox, and WebKit** — cross-browser without a grid vendor.
 3. **Built-in network interception** (`page.route`) is the primitive the chaos/fault-injection layer is built on. No plugin required.
 4. **Trace viewer, screenshots, and video** are first-class — the evidence engine gets them for free.
-5. **TypeScript strict mode** catches locator/payload contract drift at compile time, which is exactly what a portfolio framework should demonstrate.
+5. **TypeScript strict mode** catches locator/payload contract drift at compile time — the kind of defect class a test framework exists to surface early.
 
 ## Consequences
 

@@ -1,7 +1,6 @@
 # What I'd Improve Next
 
-Honest gaps, in priority order. This list is the interview cheat sheet —
-it shows judgment about what matters, not just what shipped.
+Honest gaps, in priority order. This list shows judgment about what matters, not just what shipped.
 
 Done in the five-pillar restructure (2026-10-07) — no longer gaps:
 - ~~Defect-detection proof suite~~ — `tests/proof/defect-detection.spec.ts` + `docs/expected-outcomes.md`

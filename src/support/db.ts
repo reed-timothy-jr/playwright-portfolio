@@ -66,7 +66,14 @@ export class PostgresDatabase implements DatabaseClient {
 			user: opts.user,
 			password: opts.password,
 			database: opts.database,
-			ssl: opts.ssl ? { rejectUnauthorized: false } : undefined,
+			// TLS verification stays ON by default — a sec-pillar framework
+			// must not silently disable it. Opt out per-environment only.
+			ssl: opts.ssl
+				? {
+						rejectUnauthorized:
+							process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+					}
+				: undefined,
 			max: 5,
 		});
 	}
@@ -110,8 +117,10 @@ export class PostgresDatabase implements DatabaseClient {
 }
 
 /**
- * In-process Postgres for hermetic specs. Imported lazily so the pg
- * dependency stays optional for teams that only want the real client.
+ * In-process Postgres for hermetic specs. The pg driver is imported
+ * statically at the top of this module (used by PostgresDatabase), so it
+ * is a regular dependency — PGlite itself is imported lazily because it
+ * is only needed on the default lane.
  */
 export class PGliteDatabase implements DatabaseClient {
 	private db: {
@@ -121,18 +130,30 @@ export class PGliteDatabase implements DatabaseClient {
 		) => Promise<{ rows: Record<string, unknown>[] }>;
 		close: () => Promise<void>;
 	} | null = null;
+	/** Cached init promise: concurrent first queries share one database. */
+	private initPromise: Promise<{
+		query: (
+			sql: string,
+			params?: unknown[],
+		) => Promise<{ rows: Record<string, unknown>[] }>;
+		close: () => Promise<void>;
+	}> | null = null;
 
 	private async instance() {
 		if (!this.db) {
-			const { PGlite } = await import('@electric-sql/pglite');
-			const pg = new PGlite();
-			this.db = {
-				query: async (sql: string, params: unknown[] = []) =>
-					pg.query(sql, params),
-				close: async () => pg.close(),
-			};
+			this.initPromise ??= (async () => {
+				const { PGlite } = await import('@electric-sql/pglite');
+				const pg = new PGlite();
+				this.db = {
+					query: async (sql: string, params: unknown[] = []) =>
+						pg.query(sql, params),
+					close: async () => pg.close(),
+				};
+				return this.db;
+			})();
+			await this.initPromise;
 		}
-		return this.db;
+		return this.db as NonNullable<typeof this.db>;
 	}
 
 	async query<T extends QueryResultRow = QueryResultRow>(

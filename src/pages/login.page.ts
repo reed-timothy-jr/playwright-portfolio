@@ -8,25 +8,27 @@ import { BasePage } from './base.page';
  * stays the same — only selectors change per app.
  */
 export class LoginPage extends BasePage {
-	constructor(page: Page, baseURL?: string) {
+	constructor(page: Page, baseURL: string) {
 		super(page, baseURL);
 	}
 
 	private readonly path = '/login';
 
 	get username() {
-		return this.page.locator('#username');
+		return this.page.getByLabel('Username');
 	}
 
 	get password() {
-		return this.page.locator('#password');
+		return this.page.getByLabel('Password');
 	}
 
 	get submit() {
-		return this.page.locator('button[type="submit"]');
+		return this.page.getByRole('button', { name: 'Login' });
 	}
 
 	get flash() {
+		// No accessible name on the flash div — CSS scoped to the form is
+		// the honest last resort per docs/locator-strategy.md.
 		return this.page.locator('#flash');
 	}
 

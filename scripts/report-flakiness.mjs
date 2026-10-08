@@ -29,11 +29,18 @@ function walk(suites, filePrefix = '') {
 			for (const t of spec.tests ?? []) {
 				const results = t.results ?? [];
 				const first = results.find((r) => r.retry === 0);
-				const finalOk = t.status === 'expected';
+				// Playwright marks retry-passes as 'flaky', not 'expected' —
+				// checking only 'expected' mislabels them FAILED and keeps
+				// the flaky count at 0 forever.
+				const finalOk = t.status === 'expected' || t.status === 'flaky';
+				// test.fail() cases fail on purpose: an expected failure is
+				// not flakiness.
+				const expectedToFail = t.expectedStatus === 'failed';
 				let verdict;
 				if (!first) verdict = 'NO-RESULT';
-				else if (first.status === 'passed' || first.status === 'skipped')
-					verdict = first.status === 'skipped' ? 'SKIPPED' : 'CLEAN';
+				else if (first.status === 'skipped') verdict = 'SKIPPED';
+				else if (first.status === 'passed') verdict = 'CLEAN';
+				else if (expectedToFail && finalOk) verdict = 'XFAIL';
 				else if (finalOk) verdict = 'FLAKY';
 				else verdict = 'FAILED';
 				rows.push({
@@ -49,7 +56,14 @@ function walk(suites, filePrefix = '') {
 }
 walk(data.suites);
 
-const counts = { CLEAN: 0, FLAKY: 0, FAILED: 0, SKIPPED: 0, 'NO-RESULT': 0 };
+const counts = {
+	CLEAN: 0,
+	FLAKY: 0,
+	FAILED: 0,
+	SKIPPED: 0,
+	XFAIL: 0,
+	'NO-RESULT': 0,
+};
 for (const r of rows) counts[r.verdict] = (counts[r.verdict] ?? 0) + 1;
 
 console.log('\n[flakiness] first-attempt vs retries\n');

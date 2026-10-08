@@ -71,7 +71,9 @@ export default defineConfig({
 		// fixture (fixture demo app by default, BASE_URL override). baseURL
 		// below is only a fallback for any relative navigations.
 		baseURL: process.env.BASE_URL,
-		trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
+		// 'on-first-retry' with retries: 0 records nothing, so local runs
+		// keep traces on failure; CI keeps its retry-based traces.
+		trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
 		screenshot: 'only-on-failure',
 		video: 'retain-on-failure',
 		actionTimeout: 10_000,
@@ -104,6 +106,9 @@ export default defineConfig({
 		{
 			name: 'perf',
 			testMatch: /tests\/perf\/.*/,
+			// Perf budgets measure once: retries would make the budget
+			// best-of-three. Flakes here are findings, not noise.
+			retries: 0,
 			use: { ...devices['Desktop Chrome'] },
 		},
 		{ name: 'sec', testMatch: /tests\/sec\/.*/ },

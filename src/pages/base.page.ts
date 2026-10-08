@@ -1,18 +1,24 @@
 import type { Page } from '@playwright/test';
-import { config } from '../support/config';
 
 /**
  * Base page: every page object gets navigation + a base URL.
- * The base URL is injectable so specs can run against the bundled fixture
- * app, a local dev server, or a deployed environment via BASE_URL.
+ * The base URL is required and injectable — pass the appTarget fixture's
+ * url so specs run against the bundled fixture app, a local dev server,
+ * or a deployed environment via BASE_URL. There is deliberately no
+ * default: a page object pointed at the wrong app is a silent lie.
  */
 export abstract class BasePage {
 	protected readonly baseURL: string;
 
 	constructor(
 		protected readonly page: Page,
-		baseURL: string = config.baseURL,
+		baseURL: string,
 	) {
+		if (!baseURL) {
+			throw new Error(
+				'BasePage: baseURL is required — pass appTarget.url (fixture app by default, BASE_URL override).',
+			);
+		}
 		this.baseURL = baseURL.replace(/\/$/, '');
 	}
 

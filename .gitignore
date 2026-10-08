@@ -12,4 +12,3 @@ playwright/.auth/
 # Keep them out of the repo; promote keepers into the real suites.
 src/pages/generated/
 tests/e2e/generated/
-app-model.json

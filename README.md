@@ -1,8 +1,8 @@
 # PowerBase Playwright Framework
 
-> A base test framework for enterprise applications — from small/medium businesses to large teams — and a senior-SDET portfolio piece.
+> A base test framework for enterprise applications — from small/medium businesses to large teams.
 
-Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its own. Around them, a supporting layer (self-healing locators, chaos engineering, evidence capture) that serves the pillars instead of competing with them. While standard frameworks just *check* your app, PowerBase **proves it can find defects** — see the [defect-detection proof suite](docs/expected-outcomes.md).
+Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its own. Around them, a supporting layer (self-healing locators, chaos engineering, evidence capture) that serves the pillars instead of competing with them. The [defect-detection proof suite](docs/expected-outcomes.md) plants realistic defects and asserts the framework catches them — detection is a tested behavior here, not an assumption.
 
 [![CI](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml)
 ![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33)
@@ -35,7 +35,7 @@ Nice-to-haves that serve the pillars — in `src/support/`:
 | **Self-healing locators** | Ordered fallback strategies when the primary locator breaks; heals ONLY on unambiguous matches — ambiguous matches are rejected and logged, never silently healed | e2e stability |
 | **Chaos engineering** | Bounded fault injection: latency, error-rate aborts, offline, CPU throttle, storage wipes; experiments always restore state | e2e/perf resilience proofs |
 | **Typed API client** | Dependency-free `fetch` wrapper (GET/POST/PUT/PATCH/DELETE) with timeouts and header merging | api pillar, flagship workflow |
-| **Evidence** | Screenshots, DOM snapshots, structured JSON (healing events, chaos logs, API payloads) attached to every report | every failure |
+| **Evidence** | Playwright captures screenshots/video/traces on failure; specs attach structured JSON where it matters (healing events, chaos logs, API payloads, timing) | failure diagnosis |
 | **Page objects** | `src/pages/` — named locators, action methods that read like the user story | e2e pillar |
 | **Accessibility** | axe-core, critical/serious WCAG 2.0A/2.1AA (`npm run test:support`) | quality scope |
 | **Visual regression** | Deterministic fixture baselines (`npm run test:support`) | quality scope |
@@ -115,7 +115,7 @@ Each pillar exists for a risk reason, not a coverage number:
 
 1. **Pillars first, features second.** The five testing modules are the product; everything else exists to make them stronger.
 2. **The primary locator is the contract.** Healing recovers the run on unambiguous matches only — ambiguous matches are rejected and logged, never silently healed. Strict mode fails fast on an ambiguous primary.
-3. **Evidence over assumptions.** Every failure attaches screenshots, DOM, and structured JSON. A recovered test is always distinguishable from a clean pass in the audit log.
+3. **Evidence over assumptions.** Playwright records screenshots, video, and traces on failure; specs attach structured JSON (API payloads, chaos logs, healing events, timing) where the diagnosis needs it. A recovered test is always distinguishable from a clean pass in the audit log.
 4. **Deterministic by default.** Fixture app, PGlite, seeded data — green on clone with no network. External targets are an override, not a requirement.
 5. **Chaos stays bounded.** Fault injection is scoped by URL pattern, logged, always restores state — even when the test body throws.
 6. **Scaffolds, not suites.** Recon generates reviewable starting points, never finished tests. Generation without a human deciding what the contracts are would encode the app's bugs as truth.

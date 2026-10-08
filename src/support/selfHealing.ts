@@ -13,8 +13,10 @@ import type { Locator, Page } from '@playwright/test';
  *   Zero matches → failed; several → ambiguous-rejected. Healing to an
  *   ambiguous match could click the wrong thing and still pass — worse
  *   than failing.
- * - `strict` mode applies the same rule to the PRIMARY: an ambiguous
- *   contract fails fast instead of healing (fix the locator, don't guess).
+ * - `strict` mode (the default) applies the ambiguity rule to the PRIMARY:
+ *   a primary matching several elements fails fast instead of healing
+ *   (fix the locator, don't guess). A primary matching nothing still
+ *   heals — a stale locator is the case healing exists for.
  * - `maxAttempts` bounds how many fallbacks are tried.
  * - Every attempt is recorded in the audit log, so a recovered test is
  *   always distinguishable from a clean pass (see getAttemptLog()).
@@ -53,10 +55,13 @@ export interface HealingAttempt {
 
 export interface HealingOptions {
 	/**
-	 * When true, the PRIMARY locator is pre-checked: it must match exactly
-	 * one element, otherwise resolve() fails fast with a clear ambiguity
-	 * error instead of trying fallbacks (an ambiguous contract is broken —
-	 * healing would be guessing). Default false.
+	 * When true (the default), the PRIMARY locator is a contract: after
+	 * waiting for it to appear, it must match exactly one element —
+	 * otherwise resolve() fails fast with a clear ambiguity error instead
+	 * of trying fallbacks (an ambiguous contract is broken — healing would
+	 * be guessing). Set false to opt into lenient mode, where an
+	 * ambiguous primary falls through to fallbacks (not recommended; the
+	 * attempt log still records what happened).
 	 */
 	strict?: boolean;
 	/** Maximum fallback strategies to try. Defaults to all provided. */
@@ -102,10 +107,28 @@ export class SelfHealingLocator {
 		const candidates = this.fallbacks.slice(0, Math.max(0, maxAttempts));
 
 		const primary = this.primary(this.page);
-		if (this.options.strict === true) {
-			const primaryCount = await primary.count();
-			if (primaryCount !== 1) {
-				const detail = `primary matched ${primaryCount} elements, expected exactly 1`;
+		// Strict is the default: the primary is the contract, and an
+		// ambiguous contract fails fast instead of healing. An ABSENT
+		// primary (stale after a redesign) still heals — that is the
+		// core healing case.
+		if (this.options.strict ?? true) {
+			// Wait FIRST, then count: an async-rendered element must not
+			// read as "matched 0", and waitFor surfaces Playwright's own
+			// strict-mode violation for multiples.
+			let waitedOk = true;
+			let waitDetail = '';
+			try {
+				await primary.waitFor({ state: 'attached', timeout });
+			} catch (err) {
+				waitedOk = false;
+				waitDetail =
+					err instanceof Error ? err.message.split('\n')[0] : String(err);
+			}
+			const primaryCount = await primary.count().catch(() => -1);
+			if (primaryCount > 1) {
+				const detail =
+					`ambiguous primary: matched ${primaryCount} elements, expected exactly 1` +
+					(waitedOk ? '' : ` (${waitDetail})`);
 				this.attemptLog.push({
 					strategy: 'primary',
 					outcome: 'ambiguous-rejected',
@@ -116,16 +139,33 @@ export class SelfHealingLocator {
 						`Fix the contract locator instead of healing.`,
 				);
 			}
-		}
-		try {
-			await primary.waitFor({ state: 'attached', timeout });
-			this.attemptLog.push({ strategy: 'primary', outcome: 'primary-ok' });
-			return primary;
-		} catch (err) {
-			const detail =
-				err instanceof Error ? err.message.split('\n')[0] : String(err);
+			if (waitedOk && primaryCount === 1) {
+				this.attemptLog.push({ strategy: 'primary', outcome: 'primary-ok' });
+				return primary;
+			}
+			// Absent primary: log it and fall through to the fallbacks below.
+			const detail = `primary matched no elements within ${timeout}ms`;
 			errors.push(detail);
-			this.attemptLog.push({ strategy: 'primary', outcome: 'failed', detail });
+			this.attemptLog.push({
+				strategy: 'primary',
+				outcome: 'failed',
+				detail,
+			});
+		} else {
+			try {
+				await primary.waitFor({ state: 'attached', timeout });
+				this.attemptLog.push({ strategy: 'primary', outcome: 'primary-ok' });
+				return primary;
+			} catch (err) {
+				const detail =
+					err instanceof Error ? err.message.split('\n')[0] : String(err);
+				errors.push(detail);
+				this.attemptLog.push({
+					strategy: 'primary',
+					outcome: 'failed',
+					detail,
+				});
+			}
 		}
 
 		for (const strategy of candidates) {

@@ -1,6 +1,6 @@
 {
 	"author": "Timothy Reed",
-	"description": "PowerBase Playwright Framework — five-pillar test framework (e2e, api, db, perf, sec) with a supporting layer: self-healing locators, chaos engineering, typed API client, evidence capture. Base framework for enterprise apps; senior-SDET portfolio piece.",
+	"description": "PowerBase Playwright Framework — five-pillar test framework (e2e, api, db, perf, sec) with a supporting layer: self-healing locators, chaos engineering, typed API client, evidence capture. Base framework for enterprise apps.",
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.15",
 		"@playwright/test": "^1.55.0",

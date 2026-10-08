@@ -22,7 +22,8 @@ code — and stops there. The engineer reviews, promotes, and deletes.
    including its bugs. A human must decide which behaviors are contracts
    worth pinning.
 
-2. **Consistent with the healing philosophy (ADR-002).** The framework
+2. **Consistent with the healing philosophy** (see `src/support/selfHealing.ts`
+   and `docs/locator-strategy.md`). The framework
    never silently rewrites the suite: healing produces a reviewable event
    log, and scaffolding produces reviewable files. Generation without
    review would be the same sin at a larger scale.

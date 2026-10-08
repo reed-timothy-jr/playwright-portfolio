@@ -14,9 +14,9 @@ problems:
 1. **For teams adopting it** (including small/medium businesses): no clear
    answer to "what do I get?" — a buyer thinks in testing *types*
    (e2e, api, db, perf, sec), not framework *mechanisms*.
-2. **For employers reading it as a portfolio**: a feature catalog reads as
-   breadth without judgment. A hiring manager wants to see what the
-   engineer considers the load-bearing walls.
+2. **For readers evaluating it**: a feature catalog reads as breadth
+   without judgment. The structure should show what the author considers
+   the load-bearing walls.
 
 ## Decision
 
