@@ -1,11 +1,13 @@
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { transpileModule } from 'typescript';
 import { expect, test } from '../../src/fixtures';
 import { startFixtureApp } from '../../src/support/fixtureApp';
 import { crawlApp, normalizeApiPath } from '../../src/support/recon/crawler';
 import {
 	generateFromModel,
+	identifierFor,
 	locatorForField,
 	writeGenerated,
 } from '../../src/support/recon/generator';
@@ -40,6 +42,7 @@ function sampleModel(): AppModel {
 						method: 'post',
 						identifier: 'login-form',
 						purpose: 'login',
+						submitText: 'Sign in',
 						fields: [
 							{
 								name: 'username',
@@ -116,10 +119,19 @@ test.describe('locatorForField', () => {
 	test('prefers accessible label, then name attribute', () => {
 		expect(
 			locatorForField({ name: 'username', type: 'text', label: 'Username' }),
-		).toBe('page.getByLabel("Username")');
+		).toBe('this.page.getByLabel("Username")');
 		expect(locatorForField({ name: 'q', type: 'text', label: '' })).toBe(
-			'page.locator("[name=\\"q\\"]")',
+			'this.page.locator("[name=\\"q\\"]")',
 		);
+	});
+});
+
+test.describe('identifierFor', () => {
+	test('sanitizes free text into valid identifiers', () => {
+		expect(identifierFor('Sign in', 'fallback')).toBe('signIn');
+		expect(identifierFor('E-mail address!', 'fallback')).toBe('eMailAddress');
+		expect(identifierFor('', 'fallback')).toBe('fallback');
+		expect(identifierFor('2FA code', 'fallback')).toBe('_2faCode');
 	});
 });
 
@@ -137,11 +149,34 @@ test.describe('generateFromModel', () => {
 		}
 		const pageObject = files[0]?.content ?? '';
 		expect(pageObject).toContain('export class LoginPage');
-		expect(pageObject).toContain('getByLabel("Username")');
-		expect(pageObject).toContain('getByLabel("Password")');
+		expect(pageObject).toContain('this.page.getByLabel("Username")');
+		expect(pageObject).toContain('this.page.getByLabel("Password")');
 		const spec = files[1]?.content ?? '';
 		expect(spec).toContain("test('loads with status 200'");
 		expect(spec).toContain('toHaveTitle("Login")');
+		expect(spec).toContain('await page.goto(target.path);');
+		expect(spec).toContain(
+			"expect(response?.status(), 'HTTP status').toBe(200);",
+		);
+	});
+
+	test('generated output is syntactically valid TypeScript', () => {
+		const files = generateFromModel(sampleModel(), 'npm run scaffold');
+		for (const f of files) {
+			const result = transpileModule(f.content, {
+				compilerOptions: { target: 99 /* ESNext */ },
+				reportDiagnostics: true,
+			});
+			const syntaxErrors = (result.diagnostics ?? []).filter(
+				(d) => d.category === 1 /* Error */,
+			);
+			expect(
+				syntaxErrors.map((d) => String(d.messageText)),
+				`syntax errors in ${f.path}`,
+			).toEqual([]);
+			// No getter may carry raw button text as its name.
+			expect(f.content).not.toMatch(/get [A-Z][a-z]* [a-z]/);
+		}
 	});
 
 	test('writeGenerated never overwrites without force', async () => {
@@ -188,6 +223,7 @@ test.describe('crawlApp (fixture app integration)', () => {
 			expect(login?.forms).toHaveLength(1);
 			const form = login?.forms[0];
 			expect(form?.purpose).toBe('login');
+			expect(form?.submitText).toBe('Login');
 			expect(form?.fields.map((f) => f.name).sort()).toEqual([
 				'password',
 				'username',
@@ -201,9 +237,24 @@ test.describe('crawlApp (fixture app integration)', () => {
 
 			// The crawled model feeds the generator end to end.
 			const files = generateFromModel(model, 'npm run scaffold');
-			expect(
-				files.some((f) => f.path === 'src/pages/generated/login.page.ts'),
-			).toBe(true);
+			const loginPage = files.find(
+				(f) => f.path === 'src/pages/generated/login.page.ts',
+			);
+			expect(loginPage).toBeDefined();
+			// Real scraped button text becomes a sanitized getter, and every
+			// generated file must be syntactically valid TypeScript.
+			expect(loginPage?.content).toContain('get loginButton()');
+			expect(loginPage?.content).toContain('{ name: "Login" }');
+			for (const f of files) {
+				const result = transpileModule(f.content, {
+					compilerOptions: { target: 99 /* ESNext */ },
+					reportDiagnostics: true,
+				});
+				expect(
+					(result.diagnostics ?? []).filter((d) => d.category === 1),
+					`syntax errors in ${f.path}`,
+				).toEqual([]);
+			}
 		} finally {
 			await app.close();
 		}

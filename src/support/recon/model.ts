@@ -31,6 +31,8 @@ export const ScrapedFormSchema = z.object({
 	fields: z.array(ScrapedFieldSchema),
 	/** Best-effort guess: 'login' | 'search' | 'register' | 'unknown'. */
 	purpose: z.enum(['login', 'search', 'register', 'unknown']),
+	/** Visible text of the form's submit button, '' when none found. */
+	submitText: z.string().optional().default(''),
 });
 
 export type ScrapedForm = z.infer<typeof ScrapedFormSchema>;

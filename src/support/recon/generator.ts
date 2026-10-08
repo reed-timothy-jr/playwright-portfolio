@@ -52,10 +52,25 @@ export function locatorForField(field: {
 	type: string;
 	label: string;
 }): string {
-	if (field.label) return `page.getByLabel(${JSON.stringify(field.label)})`;
+	if (field.label)
+		return `this.page.getByLabel(${JSON.stringify(field.label)})`;
 	if (field.name)
-		return `page.locator(${JSON.stringify(`[name="${field.name}"]`)})`;
-	return `page.getByRole(${JSON.stringify(field.type === 'checkbox' ? 'checkbox' : 'textbox')})`;
+		return `this.page.locator(${JSON.stringify(`[name="${field.name}"]`)})`;
+	return `this.page.getByRole(${JSON.stringify(field.type === 'checkbox' ? 'checkbox' : 'textbox')})`;
+}
+
+/** Sanitize free text into a valid TS identifier fragment. */
+export function identifierFor(text: string, fallback: string): string {
+	const clean = text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, ' ')
+		.trim()
+		.split(' ')
+		.map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+		.join('');
+	if (!clean) return fallback;
+	// Identifiers can't start with a digit.
+	return /^[0-9]/.test(clean) ? `_${clean}` : clean;
 }
 
 function pageObjectFor(pageModel: ScrapedPage, command: string): GeneratedFile {
@@ -77,26 +92,37 @@ function pageObjectFor(pageModel: ScrapedPage, command: string): GeneratedFile {
 		'\t}',
 	];
 
+	const usedProps = new Set<string>();
 	for (const form of pageModel.forms) {
 		lines.push(
 			'',
 			`\t// Form: ${form.identifier} (${form.method.toUpperCase()} ${form.action || '(same page)'}, purpose: ${form.purpose})`,
 		);
 		for (const field of form.fields) {
-			const prop = field.name
-				? field.name.replace(/[^a-zA-Z0-9_]/g, '_')
-				: `${field.type}Field`;
+			let prop = identifierFor(field.label || field.name, `${field.type}Field`);
+			for (let i = 2; usedProps.has(prop); i++) {
+				prop = `${identifierFor(field.label || field.name, `${field.type}Field`)}${i}`;
+			}
+			usedProps.add(prop);
 			lines.push(
 				`\tget ${prop}(): import('@playwright/test').Locator {`,
 				`\t\treturn ${locatorForField(field)};`,
 				'\t}',
 			);
 		}
-		const submitName = submitNameFor(form);
-		if (submitName) {
+		// Prefer the scraped submit-button text; fall back to a purpose
+		// guess only when the crawler found no button.
+		const submitText = form.submitText || submitNameFor(form);
+		if (submitText) {
+			let prop = identifierFor(submitText, 'submit');
+			if (!/button$/i.test(prop)) prop += 'Button';
+			for (let i = 2; usedProps.has(prop); i++) {
+				prop = `${identifierFor(submitText, 'submit')}Button${i}`;
+			}
+			usedProps.add(prop);
 			lines.push(
-				`\tget ${submitName}(): import('@playwright/test').Locator {`,
-				`\t\treturn this.page.getByRole('button', { name: ${JSON.stringify(submitName)} });`,
+				`\tget ${prop}(): import('@playwright/test').Locator {`,
+				`\t\treturn this.page.getByRole('button', { name: ${JSON.stringify(submitText)} });`,
 				'\t}',
 			);
 		}
@@ -142,6 +168,8 @@ function smokeSpecFor(
 		"\t\t\tif (msg.type() === 'error') errors.push(msg.text());",
 		'\t\t});',
 		`\t\tconst target = new ${className}(page);`,
+		`\t\tconst response = await page.goto(target.path);`,
+		`\t\texpect(response?.status(), 'HTTP status').toBe(${pageModel.status});`,
 		'\t\tawait target.expectLoaded();',
 	];
 	if (pageModel.title) {

@@ -28,6 +28,11 @@ export interface CrawlOptions {
 	includeSubdomains?: boolean;
 	/** Per-navigation timeout ms. Default 15000. */
 	navigationTimeout?: number;
+	/**
+	 * URL patterns never crawled (destructive GETs like /logout).
+	 * Default: [/logout].
+	 */
+	excludePatterns?: RegExp[];
 	/** Called after each page is scraped (progress logging, etc.). */
 	onPage?: (page: ScrapedPage) => void;
 }
@@ -36,6 +41,7 @@ interface DomForm {
 	action: string;
 	method: string;
 	identifier: string;
+	submitText: string;
 	fields: Array<{
 		name: string;
 		type: string;
@@ -50,12 +56,14 @@ function isSameOrigin(
 	includeSubdomains: boolean,
 ): boolean {
 	if (target.protocol !== base.protocol) return false;
-	if (target.hostname === base.hostname) return true;
-	if (!includeSubdomains) return false;
-	return (
-		target.hostname.endsWith(`.${base.hostname}`) ||
-		base.hostname.endsWith(`.${target.hostname}`)
-	);
+	const sameHost =
+		target.hostname === base.hostname ||
+		(includeSubdomains &&
+			(target.hostname.endsWith(`.${base.hostname}`) ||
+				base.hostname.endsWith(`.${target.hostname}`)));
+	if (!sameHost) return false;
+	// A different port is a different service, even on the same host.
+	return target.port === base.port;
 }
 
 /** Normalize /users/123 and UUID segments so endpoints group by route. */
@@ -128,6 +136,15 @@ async function extractForms(page: Page): Promise<DomForm[]> {
 				method: (form.getAttribute('method') ?? 'get').toLowerCase(),
 				identifier: form.id || form.getAttribute('name') || `form-${index}`,
 				fields,
+				submitText: (
+					form.querySelector(
+						'button[type="submit"], input[type="submit"], button:not([type])',
+					)?.textContent ??
+					form.querySelector('input[type="submit"]')?.getAttribute('value') ??
+					''
+				)
+					.trim()
+					.slice(0, 60),
 			};
 		});
 	});
@@ -173,6 +190,7 @@ export async function crawlApp(
 		maxDepth = 3,
 		includeSubdomains = false,
 		navigationTimeout = 15000,
+		excludePatterns = [/logout/],
 		onPage,
 	} = options;
 	const base = new URL(baseUrl);
@@ -238,9 +256,16 @@ export async function crawlApp(
 		page.off('console', onConsole);
 		page.off('request', onRequest);
 
-		const url = new URL(next.url);
+		// Record the FINAL url: redirects (e.g. /secure → /login) must not
+		// be inventoried as separate pages under the requested URL.
+		const finalUrl = status === 0 ? next.url : page.url();
+		if (finalUrl !== next.url) {
+			if (visited.has(finalUrl)) continue;
+			visited.add(finalUrl);
+		}
+		const url = new URL(finalUrl);
 		pages.push({
-			url: next.url,
+			url: finalUrl,
 			path: `${url.pathname}${url.search}`,
 			title,
 			status,
@@ -253,6 +278,7 @@ export async function crawlApp(
 
 		if (next.depth < maxDepth) {
 			for (const link of links) {
+				if (excludePatterns.some((re) => re.test(link))) continue;
 				if (!visited.has(link) && pages.length + queue.length < maxPages) {
 					queue.push({ url: link, depth: next.depth + 1 });
 				}
