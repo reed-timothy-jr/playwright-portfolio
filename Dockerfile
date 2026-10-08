@@ -1,5 +1,5 @@
 # Zero-setup execution: browsers install to match the pinned Playwright version.
-FROM node:20-bookworm-slim
+FROM node:22-bookworm-slim
 
 WORKDIR /app
 

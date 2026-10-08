@@ -171,7 +171,36 @@ interface UserRow {
 	password_hash: string;
 }
 
-export async function startFixtureApp(port = 0): Promise<FixtureApp> {
+export interface FixtureAppOptions {
+	/** Port to listen on. Default 0 (ephemeral). */
+	port?: number;
+	/**
+	 * Defect flags for the kill matrix (tests/proof/kill-matrix.spec.ts).
+	 * Each mutant plants one realistic defect the pillar suites must catch:
+	 * - 'skip-persist': POST /api/users returns 201 without inserting.
+	 * - 'weak-password': POST /api/users accepts passwords under 8 chars.
+	 * - 'no-auth-redirect': GET /secure returns 200 without a session.
+	 * Also read from the FIXTURE_MUTANTS env var (comma-separated).
+	 */
+	mutants?: string[];
+}
+
+/** Active mutant flags for this fixture instance. */
+export type FixtureMutants = Set<string>;
+
+export function activeMutants(extra: string[] = []): FixtureMutants {
+	const fromEnv = (process.env.FIXTURE_MUTANTS ?? '')
+		.split(',')
+		.map((s) => s.trim())
+		.filter(Boolean);
+	return new Set([...fromEnv, ...extra]);
+}
+
+export async function startFixtureApp(
+	options: FixtureAppOptions = {},
+): Promise<FixtureApp> {
+	const { port = 0, mutants: mutantList = [] } = options;
+	const mutants = activeMutants(mutantList);
 	const db = new PGliteDatabase();
 	await db.query(`
 		CREATE TABLE IF NOT EXISTS fixture_users (
@@ -191,7 +220,7 @@ export async function startFixtureApp(port = 0): Promise<FixtureApp> {
 
 	const server: Server = createServer(async (req, res) => {
 		try {
-			await handle(req, res, db);
+			await handle(req, res, db, mutants);
 		} catch (err) {
 			send(res, 500, 'fixture app error', 'text/plain; charset=utf-8');
 			console.error('[fixture-app]', err);
@@ -221,6 +250,7 @@ async function handle(
 	req: IncomingMessage,
 	res: ServerResponse,
 	db: PGliteDatabase,
+	mutants: FixtureMutants,
 ): Promise<void> {
 	const url = new URL(req.url ?? '/', 'http://127.0.0.1');
 	const method = req.method ?? 'GET';
@@ -271,7 +301,7 @@ async function handle(
 
 	if (method === 'GET' && pathname === '/secure') {
 		const userId = verifySession(req.headers.cookie);
-		if (!userId) {
+		if (!userId && !mutants.has('no-auth-redirect')) {
 			redirect(
 				res,
 				'/login?flash=' +
@@ -324,9 +354,23 @@ async function handle(
 			});
 			return;
 		}
-		if (typeof payload.password !== 'string' || payload.password.length < 8) {
+		if (typeof payload.password !== 'string') {
 			sendJson(res, 400, {
 				error: 'password must be a string of at least 8 characters',
+			});
+			return;
+		}
+		if (payload.password.length < 8 && !mutants.has('weak-password')) {
+			sendJson(res, 400, {
+				error: 'password must be a string of at least 8 characters',
+			});
+			return;
+		}
+		if (mutants.has('skip-persist')) {
+			// Defect: the API claims the write succeeded but never persists.
+			sendJson(res, 201, {
+				id: 999001,
+				username: payload.username as string,
 			});
 			return;
 		}

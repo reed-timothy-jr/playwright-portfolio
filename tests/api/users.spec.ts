@@ -1,103 +1,127 @@
 import { z } from 'zod';
 import { expect, test } from '../../src/fixtures';
-import { config } from '../../src/support/config';
 
 const UserSchema = z.object({
 	id: z.number(),
-	name: z.string(),
-	email: z.string().email(),
+	username: z.string(),
 });
 
-interface Post {
-	id: number;
-	userId: number;
-	title: string;
-	body: string;
-}
+const ErrorSchema = z.object({ error: z.string() });
 
 /**
- * API pillar — contract-level checks against a stable public API.
- * Point API_BASE_URL at your own API; the assertion patterns transfer.
- * Zod schemas validate response contracts, not just status codes.
+ * API pillar — contract-level checks against the bundled fixture app's
+ * JSON API (no browser, no network). Zod schemas validate response
+ * contracts, not just status codes.
  *
- * Environment note: some sandboxes/restricted networks block HTTP POST
- * to external hosts while allowing GET. A preflight probe detects this
- * and skips the POST-dependent spec loudly instead of failing — the
- * client's POST path is still proven by tests/unit/apiClient.unit.spec.ts
- * and the flagship workflow (both green, no network needed).
+ * Point API_BASE_URL at your own API to run these against a real
+ * backend; the assertion patterns transfer unchanged.
+ *
+ * Parallel-safe: every created user carries a unique name and is
+ * deleted in cleanup.
  */
-let postSupported = true;
-
-test.beforeAll(async () => {
-	try {
-		const probe = await fetch(`${config.apiBaseURL}/posts`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ title: 'probe', body: 'probe', userId: 1 }),
-			signal: AbortSignal.timeout(10_000),
-		});
-		postSupported = probe.status === 201;
-	} catch {
-		postSupported = false;
-	}
-	if (!postSupported) {
-		console.log(
-			'[api] POST probe failed — skipping POST-dependent specs ' +
-				'(this environment blocks outbound POST; see README)',
-		);
-	}
-});
+function uniqueUser(prefix: string): string {
+	return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
 
 test.describe('users api', () => {
-	test('GET /users returns a contract-valid user list', async ({ api }) => {
-		const res = await api.get<unknown>('/users');
-		expect(res.status).toBe(200);
-		expect(res.headers['content-type']).toContain('application/json');
-
-		const parsed = z.array(UserSchema).safeParse(res.data);
-		expect(parsed.success).toBe(true);
-		if (parsed.success) {
-			expect(parsed.data.length).toBeGreaterThan(0);
-		}
-	});
-
-	test('GET /users/1 returns a single contract-valid user', async ({ api }) => {
-		const res = await api.get<unknown>('/users/1');
-		expect(res.status).toBe(200);
-		const parsed = UserSchema.safeParse(res.data);
-		expect(parsed.success).toBe(true);
-		if (parsed.success) {
-			expect(parsed.data.id).toBe(1);
-		}
-	});
-
-	test('POST /posts creates a resource', async ({ api }) => {
-		test.skip(
-			!postSupported,
-			'POST blocked by this environment (preflight probe failed)',
-		);
-		const res = await api.post<Post>('/posts', {
-			title: 'powerbase',
-			body: 'heals and stress-tests',
-			userId: 1,
+	test('POST /users creates a contract-valid user', async ({ api }) => {
+		const username = uniqueUser('api');
+		const res = await api.post<unknown>('/users', {
+			username,
+			password: 'longenough1',
 		});
 		expect(res.status).toBe(201);
-		expect(res.data.title).toBe('powerbase');
-		expect(res.data.id).toEqual(expect.any(Number));
+		expect(res.headers['content-type']).toContain('application/json');
+
+		const parsed = UserSchema.safeParse(res.data);
+		expect(parsed.success).toBe(true);
+		if (!parsed.success) return;
+		expect(parsed.data.username).toBe(username);
+
+		// Cleanup: delete only the record this test owns.
+		const deleted = await api.delete(`/users/${parsed.data.id}`);
+		expect(deleted.status).toBe(204);
 	});
 
-	test('GET /users/999 returns 404, not a 200 with garbage', async ({
-		api,
-	}) => {
-		const res = await api.get('/users/999');
+	test('POST /users rejects a duplicate username with 409', async ({ api }) => {
+		const username = uniqueUser('api');
+		const first = await api.post<unknown>('/users', {
+			username,
+			password: 'longenough1',
+		});
+		expect(first.status).toBe(201);
+		try {
+			const dup = await api.post<unknown>('/users', {
+				username,
+				password: 'longenough1',
+			});
+			expect(dup.status).toBe(409);
+			const parsed = ErrorSchema.safeParse(dup.data);
+			expect(parsed.success).toBe(true);
+		} finally {
+			const id = (first.data as { id: number }).id;
+			await api.delete(`/users/${id}`);
+		}
+	});
+
+	test('POST /users validates its inputs with 400s', async ({ api }) => {
+		const shortName = await api.post<unknown>('/users', {
+			username: 'ab',
+			password: 'longenough1',
+		});
+		expect(shortName.status).toBe(400);
+
+		const shortPass = await api.post<unknown>('/users', {
+			username: uniqueUser('api'),
+			password: 'short',
+		});
+		expect(shortPass.status).toBe(400);
+
+		const garbage = await api.post<unknown>('/users', { nope: true });
+		expect(garbage.status).toBe(400);
+	});
+
+	test('GET /users/:id round-trips a created user', async ({ api }) => {
+		const username = uniqueUser('api');
+		const created = await api.post<{ id: number }>('/users', {
+			username,
+			password: 'longenough1',
+		});
+		expect(created.status).toBe(201);
+		try {
+			const fetched = await api.get<unknown>(`/users/${created.data.id}`);
+			expect(fetched.status).toBe(200);
+			const parsed = UserSchema.safeParse(fetched.data);
+			expect(parsed.success).toBe(true);
+			if (parsed.success) {
+				expect(parsed.data.username).toBe(username);
+			}
+		} finally {
+			await api.delete(`/users/${created.data.id}`);
+		}
+	});
+
+	test('GET /users/:id returns 404 for a missing user', async ({ api }) => {
+		const res = await api.get<unknown>('/users/999999');
 		expect(res.status).toBe(404);
+		const parsed = ErrorSchema.safeParse(res.data);
+		expect(parsed.success).toBe(true);
 	});
 
-	test('unknown userId returns an empty array, not an error', async ({
-		api,
-	}) => {
-		const res = await api.get<unknown[]>('/posts?userId=999999');
-		expect(res.status).toBe(200);
-		expect(res.data).toEqual([]);
+	test('DELETE /users/:id removes the user, then 404s', async ({ api }) => {
+		const created = await api.post<{ id: number }>('/users', {
+			username: uniqueUser('api'),
+			password: 'longenough1',
+		});
+		expect(created.status).toBe(201);
+
+		const deleted = await api.delete(`/users/${created.data.id}`);
+		expect(deleted.status).toBe(204);
+
+		const gone = await api.get(`/users/${created.data.id}`);
+		expect(gone.status).toBe(404);
+
+		const missing = await api.delete('/users/999999');
+		expect(missing.status).toBe(404);
 	});
 });

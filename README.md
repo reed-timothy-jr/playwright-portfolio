@@ -14,10 +14,10 @@ Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its ow
 | Pillar | What it covers | Run it | What "good" looks like |
 |---|---|---|---|
 | **e2e** | Critical user paths through the UI (login, authenticated flows, the flagship API→UI→DB→fault workflow) | `npm run test:e2e` | Green on every PR; page objects read like the user story |
-| **api** | Contract-level checks: Zod-validated responses, resource creation, 404/empty-set behavior | `npm run test:api` | Schemas catch backend drift that status codes miss |
-| **db** | The persistence contract: seed → act → verify, constraint enforcement | `npm run test:db` | Same specs pass on PGlite (fast lane) and real Postgres (integration lane) |
-| **perf** | Page-load and time-to-first-byte budgets via the Navigation Timing API | `npm run test:perf` | Budgets in env (`PERF_BUDGET_LOAD_MS`); timing attached as evidence |
-| **sec** | Baseline security: response headers, authz boundaries, dependency audit | `npm run test:sec` | Missing headers fail the build; forged sessions bounced |
+| **api** | Contract-level checks against the fixture API: Zod-validated responses, resource lifecycle, 409/400/404 behavior | `npm run test:api` | Schemas catch backend drift that status codes miss |
+| **db** | The persistence contract: seed → act → verify, constraint enforcement *(baseline — grows with your schema)* | `npm run test:db` | Same specs pass on PGlite (fast lane) and real Postgres (integration lane) |
+| **perf** | Page-load and time-to-first-byte budgets via the Navigation Timing API *(baseline — extend per critical path)* | `npm run test:perf` | Budgets in env (`PERF_BUDGET_LOAD_MS`); timing attached as evidence |
+| **sec** | Baseline security: response headers, authz boundaries, dependency audit *(baseline — not a pentest)* | `npm run test:sec` | Missing headers fail the build; forged sessions bounced |
 
 ```bash
 npm run test:pillars   # all five pillars
@@ -63,7 +63,7 @@ npm run report      # open the HTML report
 
 ## Environment notes
 
-- **Restricted networks:** the e2e/perf/sec/a11y pillars run against the bundled fixture app — no external network needed, ever. The api pillar targets `API_BASE_URL` (default: jsonplaceholder); if your environment blocks outbound HTTP POST, the suite's preflight probe skips the POST-dependent spec loudly instead of failing. The client's POST path is still covered by `tests/unit/apiClient.unit.spec.ts` and the flagship workflow.
+- **Restricted networks:** every pillar runs against the bundled fixture app — no external network needed, ever. Point `BASE_URL` / `API_BASE_URL` at your own targets to run against real systems instead.
 - **Dependency audit:** `npm run audit:sec` fails the build on high+ severity advisories. Some sandboxes block the npm audit endpoint — CI runs it; run it locally where the registry is reachable.
 
 ## Project structure

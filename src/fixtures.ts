@@ -1,7 +1,6 @@
 import { test as base } from '@playwright/test';
 import { ApiClient } from './support/apiClient';
 import { ChaosInjector } from './support/chaos';
-import { config } from './support/config';
 import { type FixtureApp, startFixtureApp } from './support/fixtureApp';
 
 export interface AppTarget {
@@ -20,7 +19,11 @@ export interface AppTarget {
 }
 
 export interface PowerBaseFixtures {
-	/** Typed API client pointed at API_BASE_URL. */
+	/**
+	 * Typed API client. Defaults to the fixture app's API
+	 * (`<appTarget.url>/api`) — hermetic, no network. Set API_BASE_URL
+	 * to point it at your own API instead.
+	 */
 	api: ApiClient;
 	/** Chaos injector bound to the test's page. Auto-stopped after each test. */
 	chaos: ChaosInjector;
@@ -36,9 +39,9 @@ export interface PowerBaseWorkerFixtures {
  * appTarget is worker-scoped: one fixture-app instance per worker.
  */
 export const test = base.extend<PowerBaseFixtures, PowerBaseWorkerFixtures>({
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixture signature
-	api: async ({}, use) => {
-		await use(new ApiClient({ baseURL: config.apiBaseURL }));
+	api: async ({ appTarget }, use) => {
+		const baseURL = process.env.API_BASE_URL ?? `${appTarget.url}/api`;
+		await use(new ApiClient({ baseURL }));
 	},
 	chaos: async ({ page }, use) => {
 		const injector = new ChaosInjector(page);

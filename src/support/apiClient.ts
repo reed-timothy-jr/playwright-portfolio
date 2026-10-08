@@ -1,6 +1,12 @@
 /**
  * PowerBase typed API client — thin, dependency-free wrapper over fetch.
  * Every request returns status + typed body + headers for assertions.
+ *
+ * Why not Playwright's `request` (see ADR-001): this client is
+ * runtime-agnostic — usable in specs, scripts/ CLIs, and recon tooling,
+ * anywhere Node runs. Tradeoffs vs the built-in: API calls don't appear
+ * in the Playwright trace, and the client doesn't inherit the browser's
+ * proxy config (pass one explicitly if needed).
  */
 
 export interface ApiClientOptions {
