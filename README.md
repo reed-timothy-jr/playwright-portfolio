@@ -4,7 +4,7 @@
 
 Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its own. Around them, a supporting layer (self-healing locators, chaos engineering, evidence capture) that serves the pillars instead of competing with them. The [defect-detection proof suite](docs/expected-outcomes.md) plants realistic defects and asserts the framework catches them — detection is a tested behavior here, not an assumption.
 
-[![CI](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Reed-Timothy-jr/powerbase-playwright-framework/actions/workflows/ci.yml)
+[![CI](https://github.com/Reed-Timothy-jr/playwright-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Reed-Timothy-jr/playwright-portfolio/actions/workflows/ci.yml)
 ![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6)
 ![License](https://img.shields.io/badge/license-MIT-green)

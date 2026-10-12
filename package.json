@@ -24,7 +24,7 @@
 		"chaos-engineering"
 	],
 	"license": "MIT",
-	"name": "powerbase-playwright-framework",
+	"name": "playwright-portfolio",
 	"scripts": {
 		"report": "playwright show-report",
 		"report:flakiness": "node scripts/report-flakiness.mjs",

@@ -9,6 +9,6 @@ RUN npx playwright install --with-deps chromium
 
 COPY . .
 
-# docker run powerbase-playwright-framework
-# docker run -e BASE_URL=https://your-app.com powerbase-playwright-framework
+# docker run playwright-portfolio
+# docker run -e BASE_URL=https://your-app.com playwright-portfolio
 CMD ["npm", "run", "test:all"]
