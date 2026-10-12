@@ -120,6 +120,15 @@ Each pillar exists for a risk reason, not a coverage number:
 5. **Chaos stays bounded.** Fault injection is scoped by URL pattern, logged, always restores state — even when the test body throws.
 6. **Scaffolds, not suites.** Recon generates reviewable starting points, never finished tests. Generation without a human deciding what the contracts are would encode the app's bugs as truth.
 
+## Master QA documents
+
+The framework runs the tests; these documents run the testing. They are the standards this repo is built and judged against:
+
+- [Master Test Plan](docs/master-test-plan.md) — scope, levels, entry/exit gates, evidence rules for everything here.
+- [Master Bug Ticket](docs/master-bug-ticket.md) — the defect-report standard: evidence first, observed facts separated from inference.
+- [Manual Testing — The 5-Star Standard](docs/manual-testing-5-star.md) — the manual discovery discipline (charters, session-based execution, sign-off) whose findings become automated checks in the pillars.
+- [Master Linux Command List — QA Edition](docs/linux-command-reference.md) — the command reference for run triage: logs, processes, ports, HTTP probes.
+
 ## What I'd improve next
 
 See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priority order.
