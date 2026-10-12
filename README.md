@@ -127,6 +127,7 @@ The framework runs the tests; these documents run the testing. They are the stan
 - [Master Test Plan](docs/master-test-plan.md) — scope, levels, entry/exit gates, evidence rules for everything here.
 - [Master Bug Ticket](docs/master-bug-ticket.md) — the defect-report standard: evidence first, observed facts separated from inference.
 - [Manual Testing — The 5-Star Standard](docs/manual-testing-5-star.md) — the manual discovery discipline (charters, session-based execution, sign-off) whose findings become automated checks in the pillars.
+- [Automation Testing — The 5-Star Standard](docs/automation-testing-5-star.md) — one star per pillar: what five-star E2E, API, DB, performance, and security automation means, and the kill-proven evidence rules all five share.
 - [Master Linux Command List — QA Edition](docs/linux-command-reference.md) — the command reference for run triage: logs, processes, ports, HTTP probes.
 
 ## What I'd improve next
