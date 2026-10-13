@@ -1,6 +1,6 @@
-# PowerBase Playwright Framework
+# Playwright Portfolio
 
-> A base test framework for enterprise applications — from small/medium businesses to large teams.
+> A five-pillar Playwright + TypeScript test framework for enterprise applications — from small/medium businesses to large teams. The working showcase of Timothy Reed Jr.'s QA/SDET engineering.
 
 Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its own. Around them, a supporting layer (self-healing locators, chaos engineering, evidence capture) that serves the pillars instead of competing with them. The [defect-detection proof suite](docs/expected-outcomes.md) plants realistic defects and asserts the framework catches them — detection is a tested behavior here, not an assumption.
 
