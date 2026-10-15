@@ -134,6 +134,10 @@ Each pillar exists for a risk reason, not a coverage number:
 5. **Chaos stays bounded.** Fault injection is scoped by URL pattern, logged, always restores state — even when the test body throws.
 6. **Scaffolds, not suites.** Recon generates reviewable starting points, never finished tests. Generation without a human deciding what the contracts are would encode the app's bugs as truth.
 
+## Tutorial
+
+New to the framework? The [tutorial](docs/tutorial.md) walks it end to end — a basic walkthrough (install, first run, running each pillar, and the flagship API → UI → DB → fault → evidence → cleanup workflow as a worked example) plus the advanced methods: self-healing locators, recon-driven scaffolding, chaos injection, the database lane, the proof suite, and multi-platform CI.
+
 ## Master QA documents
 
 The framework runs the tests; these documents run the testing. They are the standards this repo is built and judged against:
