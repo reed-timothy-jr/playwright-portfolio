@@ -9,6 +9,20 @@ Five testing pillars — **e2e, api, db, perf, sec** — each runnable on its ow
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+## DevTestOps: one gate contract, every platform
+
+The framework is platform-agnostic by design: the quality gates are defined once (the npm scripts), and each major DevOps platform gets a native pipeline that runs the identical contract — **install → lint → typecheck → tests (five pillars + support projects) → dependency audit (high+ fails) → flakiness report → published evidence**.
+
+| Platform | Pipeline | Status |
+|---|---|---|
+| GitHub Actions | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Live on this repo (badge above) |
+| GitLab CI | [`.gitlab-ci.yml`](.gitlab-ci.yml) | Reference implementation |
+| Azure Pipelines | [`azure-pipelines.yml`](azure-pipelines.yml) | Reference implementation |
+| Jenkins | [`Jenkinsfile`](Jenkinsfile) | Reference implementation |
+| CircleCI | [`.circleci/config.yml`](.circleci/config.yml) | Reference implementation |
+
+Reference implementations are gate-for-gate identical to the live GitHub Actions pipeline — same order, same failure semantics, same artifacts (`playwright-report/` + `test-results/`, retained 14 days where the platform supports it). A team on any of these platforms enables the full framework by committing the one file; nothing in the test code changes. That portability is the DevTestOps point: tests, gates, and evidence are properties of the framework, not of one vendor's CI.
+
 ## The five pillars
 
 | Pillar | What it covers | Run it | What "good" looks like |

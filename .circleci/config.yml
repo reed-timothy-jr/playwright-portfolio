@@ -1,0 +1,50 @@
+# CircleCI — reference implementation of the framework's gate contract.
+# Same gates, same order as .github/workflows/ci.yml:
+#   install -> lint -> typecheck -> tests (five pillars + support) -> dependency audit -> evidence
+# The Playwright image ships browsers + OS deps, so no browser install step is needed.
+version: 2.1
+
+jobs:
+  verify:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.55.0-noble
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: deps-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: 'Gate: lint'
+          command: npm run lint
+      # Typecheck is explicit because Playwright transpiles TypeScript without type-checking it.
+      - run:
+          name: 'Gate: typecheck'
+          command: npm run typecheck
+      - run:
+          name: 'Gate: five pillars + support projects'
+          command: npm run test:all
+      # Dependency audit gate (high+ severity fails the build).
+      - run:
+          name: 'Gate: dependency audit'
+          command: npm run audit:sec
+      # First-attempt vs retry breakdown — retries hide rot, this makes it visible.
+      - run:
+          name: Flakiness report
+          command: npm run report:flakiness
+          when: always
+      - store_artifacts:
+          path: playwright-report
+      - store_artifacts:
+          path: test-results
+
+workflows:
+  verify:
+    jobs:
+      - verify
