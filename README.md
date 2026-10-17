@@ -148,6 +148,16 @@ The framework runs the tests; these documents run the testing. They are the stan
 - [Automation Testing — The 5-Star Standard](docs/automation-testing-5-star.md) — one star per pillar: what five-star E2E, API, DB, performance, and security automation means, and the kill-proven evidence rules all five share.
 - [Master Linux Command List — QA Edition](docs/linux-command-reference.md) — the command reference for run triage: logs, processes, ports, HTTP probes.
 
+**ISTQB-aligned additions** — the standards backbone (CTFL v4.0 / CTAL-TAE v2.0), each mapped to running code in this repo:
+
+- [Test Design Techniques — The ISTQB Map](docs/test-design-techniques.md) — equivalence partitioning, boundary value analysis, decision tables, and state transitions, traced to the specs that execute them.
+- [Test Automation Architecture — The CTAL-TAE Map](docs/test-automation-architecture.md) — this framework layered against the ISTQB generic Test Automation Architecture.
+- [Test Summary Report — Template](docs/test-summary-report.md) — the cycle-closing report, fed by the framework's real outputs and the Master Test Plan's exit gates.
+- [Risk-Based Testing — Register and Method](docs/risk-based-testing.md) — scored product risks mapped to the pillars that cover them; the register is the test backlog's priority order.
+- [ISTQB Glossary](docs/istqb-glossary.md) — the terms used across these docs, in plain language, each pointed at where it lives in the repo.
+
+The standards behind this framework are taught in Timinit's free interactive training program — [ISTQB Training: Foundation to Automation](https://timinit.org/istqb-training.html) (CTFL v4.0 + CTAL-TAE v2.0, 80 practice questions with timed mock exams).
+
 ## What I'd improve next
 
 See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priority order.
