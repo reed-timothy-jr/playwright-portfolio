@@ -164,7 +164,7 @@ See [docs/whats-next.md](docs/whats-next.md) — the honest gap list, in priorit
 
 ## Author
 
-**Timothy Reed** — Senior QA / SDET (Playwright + TypeScript), 11+ years across Catalyte and GEICO.
+**Timothy Reed** — Senior QA / SDET (Playwright + TypeScript), 11+ years across consulting and enterprise insurance teams.
 [LinkedIn](https://www.linkedin.com/in/timothy-reed-jr) · [timinit.org](https://timinit.org)
 
 MIT licensed — use it, fork it, ship it.
