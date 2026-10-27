@@ -151,6 +151,7 @@ The framework runs the tests; these documents run the testing. They are the stan
 **ISTQB-aligned additions** — the standards backbone (CTFL v4.0 / CTAL-TAE v2.0), each mapped to running code in this repo:
 
 - [Test Design Techniques — The ISTQB Map](docs/test-design-techniques.md) — equivalence partitioning, boundary value analysis, decision tables, and state transitions, traced to the specs that execute them.
+- [Test Every UI Element, Every Way — Manual + Automated, by ISTQB CTFL](https://gist.github.com/reed-timothy-jr/1be14852488aec7b29eb137183bbb714) — element-by-element UI testing guide (25 elements) applying CTFL v4.0 techniques, with Playwright + TypeScript automation; the practice layer for the CTFL/CTAL-TAE theory above.
 - [Test Automation Architecture — The CTAL-TAE Map](docs/test-automation-architecture.md) — this framework layered against the ISTQB generic Test Automation Architecture.
 - [Test Summary Report — Template](docs/test-summary-report.md) — the cycle-closing report, fed by the framework's real outputs and the Master Test Plan's exit gates.
 - [Risk-Based Testing — Register and Method](docs/risk-based-testing.md) — scored product risks mapped to the pillars that cover them; the register is the test backlog's priority order.
