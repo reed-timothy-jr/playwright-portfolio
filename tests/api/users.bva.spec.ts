@@ -35,8 +35,8 @@ test.describe('users api — username boundary (min 3)', () => {
 	});
 
 	test('3 characters (the boundary) is accepted with 201', async ({ api }) => {
-		// A unique 3-character username: last 3 chars of a base-36 stamp.
-		const username = Date.now().toString(36).slice(-3);
+		// A unique 3-character username: 3 random base-36 characters.
+		const username = Math.random().toString(36).slice(2, 5);
 		const res = await api.post<{ id: number }>('/users', {
 			username,
 			password: VALID_PASSWORD,
@@ -49,7 +49,7 @@ test.describe('users api — username boundary (min 3)', () => {
 	test('4 characters (valid neighbor) is accepted with 201', async ({
 		api,
 	}) => {
-		const username = `u${Date.now().toString(36).slice(-3)}`;
+		const username = `u${Math.random().toString(36).slice(2, 5)}`;
 		expect(username).toHaveLength(4);
 		const res = await api.post<{ id: number }>('/users', {
 			username,

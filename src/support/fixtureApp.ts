@@ -238,6 +238,9 @@ export async function startFixtureApp(
 		url: `http://127.0.0.1:${actualPort}`,
 		db,
 		close: async () => {
+			if (typeof server.closeAllConnections === 'function') {
+				server.closeAllConnections();
+			}
 			await new Promise<void>((resolve, reject) =>
 				server.close((err) => (err ? reject(err) : resolve())),
 			);

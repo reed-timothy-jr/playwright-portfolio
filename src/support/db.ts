@@ -167,8 +167,10 @@ export class PGliteDatabase implements DatabaseClient {
 
 	async close(): Promise<void> {
 		if (this.db) {
-			await this.db.close();
+			const target = this.db;
 			this.db = null;
+			this.initPromise = null;
+			await target.close().catch(() => undefined);
 		}
 	}
 }
